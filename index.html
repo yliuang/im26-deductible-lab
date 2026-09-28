@@ -329,6 +329,28 @@ dialog{padding:22px}
 #utility-source{max-width:950px}
 @media(max-width:800px){.utility-layout{grid-template-columns:1fr}.utility-controls{max-width:550px}}
 
+/* Pages with one focus each */
+.source-note{margin-top:22px}
+.chart-caption{font-size:14px;max-width:900px;margin:12px 0 0}
+.costs-layout{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:40px;align-items:start}
+.prob-grid{display:flex;flex-direction:column;gap:12px}
+.prob-row{display:grid;grid-template-columns:1fr 120px;gap:8px 16px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.prob-label{font-size:15px}
+.prob-input{display:flex;align-items:center;gap:6px}
+.prob-input input{text-align:right}
+.prob-row .top-cost{grid-column:1/-1;min-width:0;font-size:13px;max-width:260px}
+.prob-total{font-size:15px;font-weight:600;margin:16px 0 6px}
+.prob-total.is-off{color:var(--error)}
+.switch-list{margin:18px 0 0;padding-left:20px;font-size:14px;max-width:760px}
+.switch-list li{margin-bottom:8px}
+.whatif-pick{font-size:14px;margin:0 0 6px}
+.whatif-pick strong{font-size:24px;font-weight:550;display:block}
+.explorer-controls .field{margin-top:18px}
+.decision-choice{max-width:420px;margin:0 0 30px;font-size:14px}
+.result-summary{grid-template-columns:1fr 1fr}
+#results-validation .text-button{margin-left:6px}
+@media(max-width:800px){.costs-layout{grid-template-columns:1fr;gap:10px}}
+
 </style>
 </head>
 <body>
@@ -337,121 +359,159 @@ dialog{padding:22px}
     <div class="header-actions"><button class="button quiet" id="save-progress">Save progress</button><button class="button quiet" id="load-progress">Load</button><input type="file" id="load-file" accept="application/json,.json" hidden></div>
   </header>
   <nav class="step-nav" aria-label="Lab sections">
-    <button data-step="0" class="step active" aria-current="step"><span>01</span> Your decision</button>
-    <button data-step="1" class="step"><span>02</span> Risk preferences</button>
-    <button data-step="2" class="step"><span>03</span> Cost beliefs</button>
-    <button data-step="3" class="step"><span>04</span> Explore results</button>
-    <button data-step="4" class="step"><span>05</span> Reflect</button>
+    <button data-step="0" class="step active" aria-current="step"><span>01</span> Start</button>
+    <button data-step="1" class="step"><span>02</span> Risk questions</button>
+    <button data-step="2" class="step"><span>03</span> Risk aversion</button>
+    <button data-step="3" class="step"><span>04</span> Costs</button>
+    <button data-step="4" class="step"><span>05</span> Premiums</button>
+    <button data-step="5" class="step"><span>06</span> Result</button>
+    <button data-step="6" class="step"><span>07</span> What if</button>
+    <button data-step="7" class="step"><span>08</span> Decision</button>
   </nav>
   <main>
     <div id="global-message" role="status" aria-live="polite" hidden></div>
+
     <section class="page active" data-page="0" aria-labelledby="start-title">
       <div class="intro">
         <h1 id="start-title">Choosing your deductible</h1>
-        <p class="lead">You will state your attitude to risk and your expected healthcare costs, see which deductible a simple model recommends, and compare it with what you would actually choose.</p>
+        <p class="lead">A simple model suggests a deductible based on how you feel about risk and what you expect to spend on healthcare. You then compare its suggestion with what you would actually choose.</p>
         <p>The exercise is also an opportunity to reconsider your choice for next year. If you want to lower your deductible, your insurer must receive your notice by 30 November; raising it has a later deadline. Complete your comparison ahead of time, so we can discuss your reasoning in the tutorial on 30 November. See the <a href="https://www.priminfo.admin.ch/de/faq" target="_blank" rel="noopener">official notice rules</a> for details.</p>
-        <div class="starting-point"><h2>Your current and planned choices</h2><div class="field-row"><label class="field">Current deductible<select id="current-deductible"><option value="">Prefer not to say / not applicable</option></select></label><label class="field">Considering for next year<select id="planned-deductible"><option value="">Not decided</option></select></label></div><p class="small muted">Optional. Answers are saved in this browser only; use Save progress to continue on another device.</p></div>
-        <div class="intro-actions"><button class="button primary large" data-go="1">Begin the exercise →</button><button class="text-button" data-go="3">Explore the example first</button></div>
+        <div class="starting-point"><h2>Your deductible</h2><div class="field-row"><label class="field">Current deductible<select id="current-deductible"><option value="">Prefer not to say / not applicable</option></select></label><label class="field">Planned for next year<select id="planned-deductible"><option value="">Not decided</option></select></label></div><p class="small muted">Optional. Your answers are saved in this browser only.</p></div>
+        <div class="intro-actions"><button class="button primary large" data-go="1">Start →</button><button class="text-button" data-go="5">See an example result first</button></div>
       </div>
     </section>
 
     <section class="page" data-page="1" hidden aria-labelledby="risk-title">
-      <div class="page-heading"><h1 id="risk-title">Your risk preferences</h1><p class="lead">A few choices about uncertain income, followed by the utility curve they imply.</p></div>
       <div class="reading-flow">
-        <p>Imagine choosing between two equally attractive new jobs. You are your household's only earner, and the income from either job would last for life. One offers a guaranteed income; the other has equally likely higher and lower incomes. Use an imagined baseline if you are not earning yet.</p>
-        <p class="small muted">Adapted from the income-gamble questions in the Health and Retirement Study (Barsky et al., 1997; Kimball et al., 2008). Two or three choices locate a range for CRRA risk aversion, under expected utility.</p>
+        <div class="page-heading"><h1 id="risk-title">Risk questions</h1><p class="lead">Imagine you have to choose between two new jobs. You are the only earner in your household, and the income lasts for the rest of your life. Job A pays a fixed income. Job B has a 50% chance of doubling that income and a 50% chance of cutting it. If you are not earning yet, think of a typical first salary.</p></div>
         <div class="question-box" id="risk-quiz"></div>
         <div id="risk-feedback" class="feedback" hidden></div>
-        <div class="section-actions"><button class="button" id="restart-risk">Start the income choices</button><button class="button quiet" id="undo-risk" hidden>Undo last choice</button></div>
+        <div class="section-actions"><button class="button" id="restart-risk">Start the questions</button><button class="button quiet" id="undo-risk" hidden>Undo last answer</button></div>
+        <p class="small muted source-note">Questions from the US Health and Retirement Study (Barsky et al., 1997).</p>
       </div>
-      <section class="intermediate-visual" aria-labelledby="utility-title">
-        <h2 id="utility-title">From your answers to a utility curve</h2>
-        <p id="utility-source" class="small muted"></p>
-        <div class="utility-layout"><div class="utility-controls">
-          <label class="slider-field" for="risk-gamma-preview"><span>Relative risk aversion γ</span><strong id="gamma-preview-value"></strong><input id="risk-gamma-preview" type="range" min="0" max="20" step="0.05"><small>0: risk neutral · 0.5: square root · 1: log</small></label>
-          <label class="field">Budget for next year, W (CHF)<input type="number" id="wealth-preview" min="1" max="10000000" step="1000"></label>
-          <p class="small muted">Premiums and medical bills are paid from W. The default is CHF 10,000; you can change this number.</p>
-          <button class="button" id="use-elicited">Use my answer range</button>
-        </div><div><div id="utility-chart" class="chart" role="img" aria-label="CRRA utility curve showing expected utility and certainty-equivalent wealth"></div><p id="utility-caption" class="small" aria-live="polite"></p></div></div>
-        <p class="small muted">The illustration has equal chances of 80% or 120% of W. The curve uses u(w) = w^(1−γ)/(1−γ), or log(w) when γ = 1, rescaled for display. Applying a parameter from lifetime income to annual healthcare payments is a modelling assumption.</p>
-      </section>
-      <div class="page-bottom"><button class="button quiet" data-go="0">← Your decision</button><button class="button primary" data-go="2">Cost beliefs →</button></div>
+      <div class="page-bottom"><button class="button quiet" data-go="0">← Start</button><button class="button primary" data-go="2">Your risk aversion →</button></div>
     </section>
 
-    <section class="page" data-page="2" hidden aria-labelledby="belief-title">
-      <div class="page-heading"><h1 id="belief-title">Your healthcare costs</h1><p class="lead">Allocate 20 tokens across annual spending ranges. One token represents 5% probability. Think of 20 possible versions of your next year.</p><p>Count the full billed amount of care covered by basic insurance, not what you pay yourself, and leave out premiums.</p></div>
-      <div class="best-guess field-row"><label class="field narrow">Best guess of next year's billed costs (CHF)<input type="number" id="best-guess" min="0" max="1000000" step="50" placeholder="CHF"></label><p class="small muted">Your insurer's statement or app shows what was billed in past years.</p></div>
-      <div class="belief-toolbar"><span class="source-label" id="belief-source">Example allocation</span><div class="choice-row"><button class="button" id="own-beliefs">Begin my own allocation</button><button class="button quiet" id="example-beliefs">Use the example</button></div></div>
-      <div id="token-bank" class="token-bank" aria-live="polite"></div>
-      <div id="bins" class="bins-grid"></div>
-      <p id="belief-summary" class="belief-summary" aria-live="polite"></p>
-      <div class="bin-assumption field-row"><label class="field">Costs within each range<select id="within-bin"><option value="spread">Spread evenly across the range</option><option value="point">One representative cost per range</option></select></label><p class="small muted">Above CHF 9,500 every deductible has reached its cap, so larger values in the last range change nothing.</p></div>
-      <section class="intermediate-visual" aria-labelledby="distribution-title"><h2 id="distribution-title">The distribution you are building</h2><p class="small muted">Bar heights show the probability in each range. The ranges have different widths; these bars show probability mass, not a density.</p><div id="distribution-chart" class="chart" role="img" aria-label="Subjective probability distribution of annual covered medical costs"></div><p id="distribution-caption" class="small" aria-live="polite"></p></section>
-      <div class="belief-footer"><label class="field">How sure are you about this distribution?<select id="belief-confidence"><option value="">Not stated</option><option value="low">Not very sure</option><option value="some">Fairly sure</option><option value="high">Very sure</option></select></label><button class="button" id="record-beliefs">Save as my initial distribution</button></div>
-      <div class="page-bottom"><button class="button quiet" data-go="1">← Risk preferences</button><button class="button primary" data-go="3">Explore results →</button></div>
+    <section class="page" data-page="2" hidden aria-labelledby="gamma-title">
+      <div class="page-heading"><h1 id="gamma-title">Your risk aversion</h1><p class="lead" id="gamma-intro"></p></div>
+      <div class="utility-layout">
+        <div class="utility-controls">
+          <label class="slider-field" for="gamma-input"><span>Risk aversion γ</span><strong id="gamma-value"></strong><input id="gamma-input" type="range" min="0" max="20" step="0.05"><small>0 = risk neutral · 0.5 = square root · 1 = log</small></label>
+          <button class="button" id="use-elicited">Use my suggested value</button>
+          <label class="field">Budget for next year, W (CHF)<input type="number" id="wealth-input" min="1" max="10000000" step="1000"></label>
+          <p class="small muted">Premiums and medical bills are paid from this budget. The default is CHF 10,000; you can change it.</p>
+        </div>
+        <div><div id="utility-chart" class="chart" role="img" aria-label="Utility curve with a 50–50 gamble and its certainty equivalent"></div><p id="utility-caption" class="chart-caption" aria-live="polite"></p></div>
+      </div>
+      <div class="page-bottom"><button class="button quiet" data-go="1">← Risk questions</button><button class="button primary" data-go="3">Healthcare costs →</button></div>
     </section>
 
-    <section class="page" data-page="3" hidden aria-labelledby="results-title">
-      <div class="results-heading"><div><h1 id="results-title">Compare deductibles</h1></div><div class="result-status"><span class="source-label" id="price-badge"></span><span class="small muted" id="risk-badge"></span></div></div>
-      <details class="details prices"><summary>Premiums: example or your own quotes</summary><div class="details-body"><div class="field-row"><label class="field">Price source<select id="price-mode"><option value="example">Example (2026, maximum discounts)</option><option value="personal">My quotes</option></select></label><label class="field narrow">Quote year<input id="quote-year" type="number" min="2020" max="2100" step="1" value="2027"></label></div><p id="price-explanation" class="small"></p><div id="premium-inputs" class="premium-grid"></div><p class="small muted">Use one insurer, insurance model and accident setting for all quotes. Quotes: <a href="https://www.priminfo.admin.ch/de/praemien" target="_blank" rel="noopener">official premium calculator</a> or your insurer's premium letter.</p></div></details>
+    <section class="page" data-page="3" hidden aria-labelledby="costs-title">
+      <div class="page-heading"><h1 id="costs-title">Your healthcare costs next year</h1><p class="lead">How likely is each amount? Think of the full bill for care covered by basic insurance, before your insurer pays anything, and leave out premiums. The four chances must add up to 100%.</p></div>
+      <div class="costs-layout">
+        <div>
+          <div id="prob-grid" class="prob-grid"></div>
+          <p id="prob-total" class="prob-total" aria-live="polite"></p>
+          <p class="small muted" id="belief-source"></p>
+        </div>
+        <div><div id="distribution-chart" class="chart" role="img" aria-label="Your chances for each range of annual healthcare costs"></div></div>
+      </div>
+      <div class="page-bottom"><button class="button quiet" data-go="2">← Your risk aversion</button><button class="button primary" data-go="4">Premiums →</button></div>
+    </section>
+
+    <section class="page" data-page="4" hidden aria-labelledby="premium-title">
+      <div class="page-heading"><h1 id="premium-title">Premiums</h1><p class="lead">Use the example premiums, or enter next year's monthly premiums from your insurer's letter or the <a href="https://www.priminfo.admin.ch/de/praemien" target="_blank" rel="noopener">official premium calculator</a>. Use the same insurer, insurance model and accident cover for all six deductibles.</p></div>
+      <div class="field-row"><label class="field">Premiums<select id="price-mode"><option value="example">Example premiums (2026)</option><option value="personal">My own quotes</option></select></label><label class="field narrow">Quote year<input id="quote-year" type="number" min="2020" max="2100" step="1" value="2027"></label></div>
+      <p id="price-explanation" class="small"></p>
+      <div id="premium-inputs" class="premium-grid"></div>
       <div id="price-warnings" class="price-warnings" role="status" hidden></div>
-      <div class="field-row model-wealth"><label class="field">Budget for next year, W (CHF)<input id="wealth" type="number" min="1" max="10000000" step="1000"></label><p id="wealth-switch" class="small" aria-live="polite"></p></div>
+      <div class="page-bottom"><button class="button quiet" data-go="3">← Healthcare costs</button><button class="button primary" data-go="5">See the result →</button></div>
+    </section>
+
+    <section class="page" data-page="5" hidden aria-labelledby="result-title">
+      <div class="page-heading"><h1 id="result-title">Result</h1><p id="inputs-line" class="lead"></p></div>
       <div id="results-validation" role="alert" hidden></div>
       <section id="results-gate" class="results-gate" aria-labelledby="gate-title" hidden>
-        <h2 id="gate-title">Before the results</h2>
-        <p>What would you pay out of pocket? The deductible, plus 10% of the rest, with the 10% capped at CHF 700 a year.</p>
-        <div class="field-row"><label class="field narrow">Billed CHF 4,000, deductible CHF 1,500 (CHF)<input type="number" id="oop-1" min="0" step="1"></label><label class="field narrow">Billed CHF 12,000, deductible CHF 500 (CHF)<input type="number" id="oop-2" min="0" step="1"></label><button class="button" id="check-oop">Check</button></div>
+        <h2 id="gate-title">Before you see the result</h2>
+        <p>What would you pay out of pocket? First the deductible, then 10% of the rest, with the 10% part capped at CHF 700 a year.</p>
+        <div class="field-row"><label class="field narrow">Bill of CHF 4,000, deductible CHF 1,500 (CHF)<input type="number" id="oop-1" min="0" step="1"></label><label class="field narrow">Bill of CHF 12,000, deductible CHF 500 (CHF)<input type="number" id="oop-2" min="0" step="1"></label><button class="button" id="check-oop">Check</button></div>
         <p id="oop-feedback" class="small" aria-live="polite"></p>
-        <div class="field-row"><label class="field">Which deductible do you expect the model to recommend?<select id="prediction"><option value="">Choose…</option></select></label><button class="button primary" id="reveal-results">Show the results</button></div>
+        <div class="field-row"><label class="field">Which deductible do you think the model will recommend?<select id="prediction"><option value="">Choose…</option></select></label><button class="button primary" id="reveal-results">Show the result</button></div>
         <p id="prediction-status" class="small" aria-live="polite"></p>
       </section>
       <div id="results-body" hidden>
+        <div class="result-summary" aria-live="polite"><div><p>The model recommends</p><strong id="recommended-value"></strong><span id="recommended-context"></span></div><div><p>Lowest average cost</p><strong id="neutral-value"></strong><span id="neutral-context"></span></div></div>
         <p id="prediction-note" class="small muted"></p>
-        <div class="result-summary" aria-live="polite"><div><p>Model recommendation</p><strong id="recommended-value"></strong><span id="recommended-context"></span></div><div><p>Lowest expected cost</p><strong id="neutral-value"></strong><span id="neutral-context"></span></div><div><p>Nearest probability switch</p><strong id="switch-value"></strong><span id="switch-context"></span></div></div>
-        <div class="explorer-grid">
-          <aside class="explorer-controls"><h3>Adjust the assumptions</h3><label class="slider-field" for="risk-gamma"><span>Relative risk aversion γ</span><strong id="risk-gamma-value"></strong><input id="risk-gamma" type="range" min="0" max="20" step="0.05"><small>0: risk neutral · 0.5: square root · 1: log</small></label><label class="slider-field" for="high-prob"><span>Probability of the last spending range</span><strong id="high-prob-value"></strong><input id="high-prob" type="range" min="0" max="100" step="0.5"><small>Other ranges keep their relative weights.</small></label><label class="slider-field" for="cost-scale"><span>Scale all costs</span><strong id="cost-scale-value"></strong><input id="cost-scale" type="range" min="0.25" max="3" step="0.05"></label><button class="button full" id="restore-initial">Return to my answers</button><p class="small" id="coefficient-note"></p></aside>
-          <div class="chart-section"><div class="chart-title"><h2>What would each deductible cost?</h2><p id="cost-chart-caption"></p></div><div class="view-toggle" role="group" aria-label="Chart view"><button class="button quiet" data-cost-view="totals" aria-pressed="true">Annual totals</button><button class="button quiet" data-cost-view="gap" aria-pressed="false">Gap to the best option</button></div><div id="cost-chart" class="chart" role="img" aria-label="Annual premium and expected out-of-pocket cost for each deductible, with certainty-equivalent costs"></div><p id="cost-chart-note" class="chart-note"></p></div>
-        </div>
-        <section class="intermediate-visual"><div class="chart-title"><h2>How much could you have to pay?</h2><p>Annual standard cost-sharing before premiums. A lower deductible reduces the amount exposed to an unexpected bill.</p></div><div id="exposure-chart" class="chart" role="img" aria-label="Expected out-of-pocket spending and annual standard cap at each deductible"></div><p id="exposure-caption" class="small"></p></section>
-        <section class="map-section"><div class="chart-title"><h2>When would the recommendation change?</h2><p>Colours show the recommended deductible. Cross: your inputs. Dashed lines: your answer range, within the plotted γ values. Click the map to explore.</p></div><div id="switch-chart" class="chart" role="img" aria-label="Sensitivity map: recommended deductible by healthcare cost probability and CRRA risk aversion"></div><div id="map-legend" class="map-legend"></div></section>
-        <section class="explore-tasks" aria-labelledby="tasks-title">
-          <h2 id="tasks-title">Check what you found</h2>
-          <div class="task"><div class="field-row"><label class="field">Move only γ, keeping wealth and costs fixed. At what γ does the recommendation change?<input type="number" id="task-flip" min="0" max="20" step="0.05"></label><button class="button" data-task="flip">Check</button></div><p id="task-flip-feedback" class="small" aria-live="polite"></p></div>
-          <div class="task"><div class="field-row"><label class="field">Risk premium of the recommended deductible: CE cost minus expected total (CHF)<input type="number" id="task-premium" step="0.01"></label><button class="button" data-task="premium">Check</button></div><p id="task-premium-feedback" class="small" aria-live="polite"></p></div>
-        </section>
-        <details class="details"><summary>See the numbers</summary><div class="details-body"><div class="table-wrap"><table><thead><tr><th>Deductible</th><th>Annual premium</th><th>Expected out-of-pocket</th><th>Expected total</th><th>CE cost</th><th>Maximum standard cost-sharing</th></tr></thead><tbody id="results-table"></tbody></table></div><div class="formula-note"><h3>Calculation</h3><p>Annual cost = premium + min(cost, deductible) + min[10% × max(cost − deductible, 0), CHF 700].</p><p>CRRA utility u(w) = w^(1−γ)/(1−γ), with log(w) at γ = 1 and linear utility at γ = 0. For each deductible, calculate expected utility Σ p·u(W − annual cost). The option with the highest expected utility has the lowest certainty-equivalent cost, W − u⁻¹(expected utility). All remaining wealth values must be positive.</p><p><strong>CE cost:</strong> the sure amount the model treats as equal to an option's uncertain cost. <strong>Risk premium:</strong> CE cost minus expected cost. <strong>W:</strong> the budget for next year from which premiums, bills and everything else are paid, the same for every option. The smaller W, the more a large bill weighs; with a very large W the model is almost risk neutral.</p><h3>Why CHF 300 or CHF 2,500?</h3><p>With the maximum legal discounts, each extra franc of deductible saves CHF 0.70 of premium and adds between 0 and 1 franc of expected out-of-pocket cost, less as the deductible rises. Expected cost is therefore concave in the deductible, so a risk-neutral optimum is at CHF 300 or CHF 2,500 (ties can include other options). Middle options can win under risk aversion or with smaller actual discounts.</p></div></div></details>
+        <div class="chart-title"><h2>What does each deductible cost?</h2></div>
+        <div class="view-toggle" role="group" aria-label="Chart view"><button class="button quiet" data-cost-view="average" aria-pressed="true">Average cost</button><button class="button quiet" data-cost-view="gap" aria-pressed="false">Difference from the best</button><button class="button quiet" data-cost-view="max" aria-pressed="false">Most you could pay</button></div>
+        <p id="cost-chart-caption" class="chart-caption"></p>
+        <div id="cost-chart" class="chart" role="img" aria-label="Cost of each deductible"></div>
+        <details class="details"><summary>See the numbers</summary><div class="details-body">
+          <div class="table-wrap"><table><thead><tr><th>Deductible</th><th>Premium</th><th>Average out-of-pocket</th><th>Average total</th><th>CE cost</th><th>Most out-of-pocket</th></tr></thead><tbody id="results-table"></tbody></table></div>
+          <p><strong>CE cost</strong> (certainty-equivalent cost): the fixed yearly amount you would find just as good as the uncertain cost of an option. It adds a charge for risk to the average cost. <strong>Risk premium</strong>: CE cost minus average total.</p>
+          <div class="task"><div class="field-row"><label class="field">What is the risk premium of the recommended deductible? (CHF)<input type="number" id="task-premium" step="0.01"></label><button class="button" data-task="premium">Check</button></div><p id="task-premium-feedback" class="small" aria-live="polite"></p></div>
+          <p><strong>Why only CHF 300 or CHF 2,500 without risk aversion?</strong> With the largest legal discount, each extra franc of deductible saves CHF 0.70 of premium and adds at most one franc of expected out-of-pocket cost, less the higher the deductible. So for a risk-neutral person (γ = 0) the cheapest option is always CHF 300 or CHF 2,500.</p>
+        </div></details>
       </div>
-      <div class="page-bottom"><button class="button quiet" data-go="2">← Cost beliefs</button><button class="button primary" data-go="4">Reflect on the decision →</button></div>
+      <div class="page-bottom"><button class="button quiet" data-go="4">← Premiums</button><button class="button primary" data-go="6">What would change it? →</button></div>
     </section>
 
-    <section class="page" data-page="4" hidden aria-labelledby="reflect-title">
-      <div class="page-heading"><h1 id="reflect-title">Your choice</h1></div>
-      <div class="reflection-comparison"><div><span>Model recommendation</span><strong id="cmp-model"></strong></div><div><span>Your current deductible</span><strong id="cmp-current"></strong></div><div><span>Before the exercise</span><strong id="cmp-planned"></strong></div><div><label for="after-deductible">After the exercise</label><select id="after-deductible"><option value="">Not decided</option></select></div></div>
-      <div class="reflection-fields"><label class="field">Does the risk parameter describe your attitude? If you adjusted it, why?<textarea id="reflection-risk" rows="4"></textarea></label><label class="field">How did you construct your cost beliefs, and what remains uncertain?<textarea id="reflection-beliefs" rows="4"></textarea></label><label class="field">Would you choose the recommended deductible in real life? Explain any difference.<textarea id="reflection-choice" rows="4"></textarea></label><label class="field">Which change would make the recommendation flip? Is that change plausible?<textarea id="reflection-switch" rows="4"></textarea></label></div>
-      <details class="details"><summary>Questions to consider</summary><div class="details-body"><ul class="assumption-list"><li>Some people would find it hard to pay several medical bills in the same month, even if the yearly total is manageable. How should that affect their choice of deductible?</li><li>Would a higher deductible change whether you see a doctor?</li><li>How sure are you about γ, W and your cost beliefs?</li></ul></div></details>
-      <details class="details"><summary>Model assumptions</summary><div class="details-body"><ul class="assumption-list"><li><strong>CRRA.</strong> A range inferred from hypothetical lifetime-income choices is applied to annual healthcare payments. W is a model assumption. Borrowing limits, payment timing and background risks are omitted.</li><li><strong>Fixed spending.</strong> Your use of care does not change with the deductible.</li><li><strong>Coarse distribution.</strong> Four ranges, costs spread evenly within them, one cost for the last range.</li><li><strong>Standard adult cost-sharing.</strong> No hospital daily fee, maternity exemption, higher coinsurance on some medicines, subsidies or non-covered care. Children have other deductibles and a CHF 350 cap. A higher minimum deductible is under consultation (Motion 24.3636).</li><li><strong>Comparable options.</strong> Same insurer and insurance model for every deductible.</li></ul></div></details>
-      <div class="export-panel"><p>Download your report with your calculations and reflections, and upload it to Canvas.</p><button class="button primary" id="export-report">Download my report ↓</button></div><p id="export-status" class="small" role="status" aria-live="polite"></p>
-      <div class="page-bottom"><button class="button quiet" data-go="3">← Explore results</button><button class="button" id="save-final">Save progress file</button></div>
+    <section class="page" data-page="6" hidden aria-labelledby="whatif-title">
+      <div class="page-heading"><h1 id="whatif-title">What would change the result?</h1><p class="lead">Change one input at a time and watch the recommendation.</p></div>
+      <div id="whatif-gate" class="results-gate" hidden><p>See the result first.</p><button class="button primary" data-go="5">Go to the result</button></div>
+      <div id="whatif-body">
+        <div class="explorer-grid">
+          <aside class="explorer-controls">
+            <p class="whatif-pick">Recommendation: <strong id="whatif-pick"></strong></p>
+            <label class="slider-field" for="gamma-explore"><span>Risk aversion γ</span><strong id="gamma-explore-value"></strong><input id="gamma-explore" type="range" min="0" max="20" step="0.05"></label>
+            <label class="field">Budget W (CHF)<input type="number" id="wealth-explore" min="1" max="10000000" step="1000"></label>
+            <label class="slider-field" for="high-prob"><span>Chance of costs of CHF 7,500 or more</span><strong id="high-prob-value"></strong><input id="high-prob" type="range" min="0" max="100" step="0.5"><small>The other ranges keep their relative weights.</small></label>
+            <label class="slider-field" for="cost-scale"><span>Scale all costs</span><strong id="cost-scale-value"></strong><input id="cost-scale" type="range" min="0.25" max="3" step="0.05"></label>
+            <button class="button full" id="restore-initial">Back to my answers</button>
+          </aside>
+          <div class="chart-section">
+            <div class="chart-title"><h2>Recommendation map</h2><p>Each colour is the recommended deductible for a combination of γ and the chance of high costs. The cross marks your current inputs; the dashed box is the γ range from your answers.</p></div>
+            <div id="switch-chart" class="chart" role="img" aria-label="Recommended deductible by risk aversion and the chance of high costs"></div>
+            <div id="map-legend" class="map-legend"></div>
+            <ul id="switch-list" class="switch-list"></ul>
+          </div>
+        </div>
+        <div class="task explore-tasks"><div class="field-row"><label class="field">Move only γ. At what γ does the recommendation change?<input type="number" id="task-flip" min="0" max="20" step="0.05"></label><button class="button" data-task="flip">Check</button></div><p id="task-flip-feedback" class="small" aria-live="polite"></p></div>
+      </div>
+      <div class="page-bottom"><button class="button quiet" data-go="5">← Result</button><button class="button primary" data-go="7">Your decision →</button></div>
+    </section>
+
+    <section class="page" data-page="7" hidden aria-labelledby="decision-title">
+      <div class="reading-flow">
+        <div class="page-heading"><h1 id="decision-title">Your decision</h1><p id="decision-summary" class="lead"></p></div>
+        <label class="field decision-choice">Which deductible will you choose for next year?<select id="after-deductible"><option value="">Not decided</option></select></label>
+        <div class="reflection-fields">
+          <label class="field">Would you follow the model's recommendation? Why or why not?<textarea id="reflection-choice" rows="5"></textarea></label>
+          <label class="field">Which input are you least sure about: γ, the budget W or your cost chances? Would a realistic change flip the result?<textarea id="reflection-uncertainty" rows="5"></textarea></label>
+          <label class="field">What does the model leave out? For example, some people find it hard to pay several medical bills in the same month, and a high deductible can change whether people see a doctor.<textarea id="reflection-omitted" rows="5"></textarea></label>
+        </div>
+        <div class="export-panel"><p>Download your report with your calculations and reflections, and upload it to Canvas.</p><button class="button primary" id="export-report">Download my report ↓</button></div><p id="export-status" class="small" role="status" aria-live="polite"></p>
+      </div>
+      <div class="page-bottom"><button class="button quiet" data-go="6">← What if</button><button class="button" id="save-final">Save progress file</button></div>
     </section>
   </main>
   <footer><span>Insurance Management · Deductible Lab</span><span class="footer-actions"><button class="text-button" id="start-over">Clear my answers</button><button class="text-button" id="open-methods">Methods & sources</button></span></footer>
   <dialog id="methods-dialog">
     <div class="dialog-heading"><h2>Methods & sources</h2><button class="button quiet" id="close-methods">Close</button></div>
-    <h3>Risk preferences and utility</h3>
-    <p>HRS income gambles from Barsky, Juster, Kimball and Shapiro (1997), with the six-category version documented by Kimball, Sahm and Shapiro (2008, Table 1). The risky income doubles with probability 50%; the alternative loss is 10%, 20%, one third, 50% or 75%. We retain these outcomes and branching, with paraphrased wording for a student exercise.</p>
-    <p>Under non-negative CRRA risk aversion, each response imposes a bound on γ using ½u(2W) + ½u((1−loss)W) versus u(W). The scale W cancels in this proportional gamble. Finite intervals start at their midpoint; the unbounded upper category starts at γ = 10, explicitly a teaching choice. This is not a population-based imputation. The lowest category does not distinguish near-neutral from risk-seeking preferences. Answers can contain error, and applying the parameter to healthcare requires an additional assumption.</p>
-    <p><a href="https://www.nber.org/papers/w5213" target="_blank" rel="noopener">Original study</a> · <a href="https://websites.umich.edu/~shapiro/papers/jasa2008-online.pdf" target="_blank" rel="noopener">Kimball et al. (2008), method and bounds</a> · <a href="https://websites.umich.edu/~shapiro/data/risk_preference/HRS_Risk_Questions.pdf" target="_blank" rel="noopener">Original question wording</a></p>
-    <h3>Comparing deductibles</h3>
-    <p>For each offered deductible, the tool maps every medical-cost scenario to the insured person's payment, adds the annual premium and maximizes expected utility of remaining wealth. This follows the comparison in Biener and Zou (2024, Section 3.1) for Swiss health insurance. Their analysis uses population cost profiles; this exercise uses your subjective distribution. It does not reproduce their empirical estimates.</p>
-    <p><a href="https://alexandria.unisg.ch/server/api/core/bitstreams/9a73dc00-1da2-40f0-8081-b20e60949db6/content" target="_blank" rel="noopener">Biener &amp; Zou: Swiss deductible choice</a> · <a href="https://eml.berkeley.edu/~bhandel/wp/HIFH_HandelKolstad.pdf" target="_blank" rel="noopener">Handel &amp; Kolstad (2015): information and plan choice</a></p>
-    <h3>Cost beliefs</h3>
-    <p>Adapted from bins-and-balls elicitation, which used 20 balls and seven bins around each respondent's best guess. Here: 20 tokens, four fixed ranges, costs spread evenly within the first three ranges (or one cost per range). Not separately validated for healthcare costs.</p>
-    <p><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC2942770/" target="_blank" rel="noopener">Eliciting Subjective Probabilities in Internet Surveys</a> · <a href="https://doi.org/10.1002/jae.1233" target="_blank" rel="noopener">Delavande, Giné & McKenzie (2011)</a></p>
+    <h3>Risk questions</h3>
+    <p>The income questions come from the Health and Retirement Study (Barsky, Juster, Kimball and Shapiro, 1997), in the six-category version of Kimball, Sahm and Shapiro (2008, Table 1): the risky job doubles income or cuts it by 10%, 20%, one third, 50% or 75%. Under constant relative risk aversion (CRRA), each answer gives a bound on γ; the income level cancels out. The model starts at the middle of your range, or at γ = 10 if your range has no upper end. These are teaching choices, not the published estimation method. Using a parameter about lifetime income for one year of healthcare costs is an assumption.</p>
+    <p><a href="https://www.nber.org/papers/w5213" target="_blank" rel="noopener">Barsky et al. (1997)</a> · <a href="https://websites.umich.edu/~shapiro/papers/jasa2008-online.pdf" target="_blank" rel="noopener">Kimball et al. (2008)</a> · <a href="https://websites.umich.edu/~shapiro/data/risk_preference/HRS_Risk_Questions.pdf" target="_blank" rel="noopener">Original questions</a></p>
+    <h3>The model</h3>
+    <p>For each deductible, the model computes what you pay in each cost scenario (premium, deductible, then 10% up to CHF 700) and picks the option with the highest expected CRRA utility of what is left of the budget W. Biener and Zou (2024) compare Swiss deductibles the same way and also use W = CHF 10,000. The certainty-equivalent cost turns expected utility back into francs.</p>
+    <p><a href="https://alexandria.unisg.ch/server/api/core/bitstreams/9a73dc00-1da2-40f0-8081-b20e60949db6/content" target="_blank" rel="noopener">Biener &amp; Zou (2024)</a></p>
+    <h3>Cost chances</h3>
+    <p>You give the percent chance for each of four cost ranges, adding up to 100%, as in the density questions of the New York Fed's Survey of Consumer Expectations (Armantier et al., 2017). Within the first three ranges, costs are spread evenly; the top range uses the amount you enter. Above CHF 9,500 every deductible has reached its cap, so larger amounts change nothing.</p>
+    <p><a href="https://www.newyorkfed.org/research/epr/2017/epr_2017_overview-of-sce_armantier" target="_blank" rel="noopener">Armantier et al. (2017)</a></p>
+    <h3>What the model leaves out</h3>
+    <p>It uses standard adult cost-sharing only: no hospital daily fee, maternity exemption, higher coinsurance on some medicines, subsidies or non-covered care. Children have other deductibles and a CHF 350 cap. Your use of care is the same for every deductible. Payment timing, borrowing limits and other financial risks are not modelled. A higher minimum deductible is under consultation (Motion 24.3636).</p>
     <h3>Swiss insurance rules</h3>
     <p>Notice to lower a deductible for the following year must reach the insurer by 30 November. Raising it has a later deadline, with mid-December recommended.</p>
     <p><a href="https://www.bag.admin.ch/en/health-insurance-optional-deductibles" target="_blank" rel="noopener">BAG: Optional deductibles</a> · <a href="https://www.priminfo.admin.ch/de/faq" target="_blank" rel="noopener">Priminfo: cost-sharing and notice rules</a></p>
-    <h3>Sensitivity map</h3>
-    <p>When the probability of the last range changes, the other ranges keep their relative weights (or share equally if all are zero). Quotes, wealth and cost amounts are held fixed. The diagram and interval comparison use a finite grid; the open-ended γ category is displayed only up to γ = 20. Very narrow preference regions can fall between grid points. Ties within CHF 0.005 are shown as the lower deductible.</p>
     <p class="small muted">Charts use Plotly.js 3.1.0 under the MIT license.</p>
   </dialog>
   <noscript>Enable JavaScript in your browser to use this exercise.</noscript>
@@ -1022,27 +1082,29 @@ return Plotly;
   const money = (x, decimals = 0) => 'CHF ' + new Intl.NumberFormat('en-GB', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(x);
   const number = (x, d = 1) => new Intl.NumberFormat('en-GB', { maximumFractionDigits: d }).format(x);
   const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const gammaText = x => Number.isFinite(x) ? number(x, 2) : '∞';
   const COLORS = ['#264f43', '#487766', '#72977e', '#aba969', '#cf985b', '#c36b48'];
-  const BIN_LABELS = ['Below CHF 500', 'CHF 500–2,499', 'CHF 2,500–7,499', 'CHF 7,500 or more'];
-  const BIN_MIN = [0, 500, 2500, 7500];
-  const BIN_MAX = [499.99, 2499.99, 7499.99, 1000000];
-  const DEFAULT_COSTS = [0, 1000, 5000, 10000];
+  const RANGES = ['Below CHF 500', 'CHF 500 to 2,499', 'CHF 2,500 to 7,499', 'CHF 7,500 or more'];
+  const SHORT_RANGES = ['< 500', '500–2,499', '2,500–7,499', '7,500+'];
+  const EXAMPLE_PROBS = [20, 30, 30, 20];
+  const PAGE_NAMES = ['Start', 'Risk questions', 'Your risk aversion', 'Healthcare costs', 'Premiums', 'Result', 'What if', 'Your decision'];
   const STORAGE_KEY = 'deductible-lab-progress';
   const OOP_CHECKS = [
-    { id: 'oop-1', key: 'oop1', loss: 4000, deductible: 1500, label: 'First bill', right: '1,500 + 10% × 2,500 = 1,750.', hint: 'Deductible first, then 10% of the rest.' },
-    { id: 'oop-2', key: 'oop2', loss: 12000, deductible: 500, label: 'Second bill', right: '500 + 700, because 10% × 11,500 exceeds the cap.', hint: 'Mind the CHF 700 cap.' }
+    { id: 'oop-1', key: 'oop1', loss: 4000, deductible: 1500, label: 'First bill', right: '1,500 + 10% × 2,500 = 1,750', hint: 'Deductible first, then 10% of the rest.' },
+    { id: 'oop-2', key: 'oop2', loss: 12000, deductible: 500, label: 'Second bill', right: '500 + 700, because 10% × 11,500 is more than the cap', hint: 'Remember the CHF 700 cap.' }
   ];
-  const defaultState = () => ({ version: 4, page: 0, current: '', planned: '', after: '', hrsStarted: false, hrs: [], legacyRisk: null, wealth: 10000, wealthBaseline: 10000, counts: [4, 6, 6, 4], costs: [...DEFAULT_COSTS], withinBin: 'spread', bestGuess: null, beliefSource: 'example', beliefConfidence: '', initialBeliefs: null, priceMode: 'example', quoteYear: 2027, personalMonthly: [null, null, null, null, null, null], offered: [true, true, true, true, true, true], explore: { gamma: .5, high: null, scale: 1 }, checks: { oop1: null, oop2: null, prediction: '' }, tasks: { flipGamma: null, riskPremium: null }, reflections: { risk: '', beliefs: '', choice: '', switch: '' } });
+  const REFLECTIONS = { choice: 'Would you follow the recommendation?', uncertainty: 'Least certain input', omitted: 'What the model leaves out' };
+  const defaultState = () => ({ version: 5, page: 0, current: '', planned: '', after: '', hrsStarted: false, hrs: [], legacyRisk: null, wealth: 10000, probs: [...EXAMPLE_PROBS], topCost: 10000, beliefSource: 'example', priceMode: 'example', quoteYear: 2027, personalMonthly: [null, null, null, null, null, null], offered: [true, true, true, true, true, true], explore: { gamma: .5, high: null, scale: 1 }, checks: { oop1: null, oop2: null, prediction: '' }, tasks: { flipGamma: null, riskPremium: null }, reflections: { choice: '', uncertainty: '', omitted: '' } });
   let state = defaultState();
   let cached = null;
-  let chartTimer;
-  let plotted = false;
-  let messages;
-  let saveTimer;
+  let problem = null;
+  let costView = 'average';
+  let messages; let saveTimer; let drawTimer;
   let storageWorks = true;
-  let costView = 'totals';
   const config = { responsive: true, displaylogo: false, displayModeBar: false, scrollZoom: false };
   const chartFont = { family: 'system-ui, -apple-system, Segoe UI, sans-serif', size: 12, color: '#203a33' };
+  const baseLayout = { font: chartFont, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' };
+  const narrow = () => window.innerWidth < 520;
 
   function message(text) {
     $('global-message').textContent = text;
@@ -1051,94 +1113,194 @@ return Plotly;
     messages = setTimeout(() => { $('global-message').hidden = true; }, 6000);
   }
 
-  // Keeps the current answers in this browser so a reload or a discarded tab
-  // does not lose them. Nothing leaves the device.
+  // Keeps the answers in this browser so a reload does not lose them. Nothing leaves the device.
   function persist() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); storageWorks = true; } catch (_) { storageWorks = false; }
     }, 250);
   }
+  const hasWork = () => state.hrs.length > 0 || state.beliefSource === 'personal' || Object.values(state.reflections).some(Boolean);
 
-  function hasWork() {
-    return state.hrs.length > 0 || state.beliefSource === 'personal' || Object.values(state.reflections).some(Boolean);
-  }
-
-  const validCost = (c, i) => Number.isFinite(c) && c >= BIN_MIN[i] && c <= BIN_MAX[i];
-  const gammaText = x => Number.isFinite(x) ? number(x, 2) : '∞';
   function riskResult() {
     const r = M.hrsResult(state.hrs);
     return r.complete ? r : null;
   }
-  function calibrationSource() { return riskResult() ? 'hrs' : 'example'; }
-  function initialGamma() { return riskResult()?.gamma ?? .5; }
-  function activeInterval() {
-    const r = riskResult();
-    return r ? { label: 'income-choice range', gammaMin: r.low, gammaMax: Math.min(20, r.high), openUpper: r.openUpper } : null;
+  const initialGamma = () => riskResult()?.gamma ?? .5;
+  const revealed = () => state.checks.prediction !== '';
+  function rangeText(r) {
+    return r.openUpper ? `${gammaText(r.low)} or higher` : r.low === 0 ? `below ${gammaText(r.high)}` : `between ${gammaText(r.low)} and ${gammaText(r.high)}`;
   }
 
-  function baselineProbabilities() {
-    const total = state.counts.reduce((a, b) => a + b, 0);
-    if (total !== 20) throw new Error(`Allocate exactly 20 tokens. Currently allocated: ${total}.`);
-    return state.counts.map(c => c / 20);
-  }
-
-  function checkCosts() {
-    const spread = state.withinBin === 'spread';
-    state.costs.forEach((c, i) => {
-      if ((!spread || i === 3) && !validCost(c, i)) throw new Error(`The cost for the range “${BIN_LABELS[i]}” must be inside that range.`);
-    });
-  }
+  // An input problem that the student fixes on a particular page.
+  function issue(text, page) { const e = new Error(text); e.page = page; return e; }
 
   function inputs() {
-    const base = baselineProbabilities();
-    checkCosts();
-    if (!Number.isFinite(state.explore.gamma) || state.explore.gamma < 0 || state.explore.gamma > 20) throw new Error('Use a γ between 0 and 20 for this exploration.');
-    if (!Number.isFinite(state.wealth) || state.wealth <= 0) throw new Error('Enter a positive initial wealth assumption.');
-    if (!Number.isFinite(state.explore.scale) || state.explore.scale <= 0) throw new Error('Use a positive cost multiplier.');
+    const probs = state.probs;
+    if (probs.some(p => !Number.isFinite(p) || p < 0 || p > 100)) throw issue('Each chance must be between 0% and 100%.', 3);
+    const total = probs.reduce((a, b) => a + b, 0);
+    if (Math.abs(total - 100) > 1e-9) throw issue(`Your cost chances add up to ${number(total)}%, not 100%.`, 3);
+    if (!(Number.isFinite(state.topCost) && state.topCost >= 7500)) throw issue('The amount for CHF 7,500 or more must be at least CHF 7,500.', 3);
+    if (!(Number.isFinite(state.wealth) && state.wealth > 0)) throw issue('Enter a budget W above zero.', 2);
     const personal = state.priceMode === 'personal';
     const premiums = personal ? state.personalMonthly.map(p => Number.isFinite(p) ? p * 12 : NaN) : [...M.EXAMPLE_PREMIUMS];
     const offered = personal ? [...state.offered] : M.DEDUCTIBLES.map(() => true);
-    if (personal && premiums.some((p, i) => offered[i] && !Number.isFinite(p))) throw new Error('Enter a monthly quote for each deductible, or untick those your insurer does not offer.');
+    if (!offered.some(Boolean)) throw issue('Tick at least one deductible your insurer offers.', 4);
+    if (personal && premiums.some((p, i) => offered[i] && !(p >= 0))) throw issue('Enter a monthly premium for each deductible, or untick those your insurer does not offer.', 4);
+    const base = probs.map(p => p / 100);
     const binProbabilities = state.explore.high === null ? base : M.reweightHigh(base, state.explore.high);
-    const scenario = M.binScenarios(binProbabilities, state.costs, state.withinBin === 'spread');
+    const scenario = M.binScenarios(binProbabilities, [0, 1000, 5000, state.topCost], true);
     const costs = scenario.costs.map(c => c * state.explore.scale);
-    return { base, binProbabilities, probabilities: scenario.probabilities, costs, premiums, offered, gamma: state.explore.gamma, wealth: state.wealth };
+    return { binProbabilities, probabilities: scenario.probabilities, costs, premiums, offered, gamma: state.explore.gamma, wealth: state.wealth };
   }
 
-  function intervalBand(inps) {
-    const iv = activeInterval();
-    return iv ? { ...iv, regions: M.gammaRegions(inps.costs, inps.probabilities, inps.premiums, inps.offered, inps.wealth, iv.gammaMin, iv.gammaMax, 70) } : null;
-  }
-
-  function bandSummary(band) {
-    if (!band) return '';
-    const picks = [...new Set(band.regions.map(x => x.deductible))];
-    const range = `γ ${gammaText(band.gammaMin)}–${gammaText(band.gammaMax)}${band.openUpper ? ' (upper range continues beyond 20)' : ''}`;
-    return picks.length === 1 ? `Same pick across sampled values in ${range}` : `Within ${range}, sampled picks include ${picks.map(d => money(d)).join(' / ')}`;
-  }
-
-  // Where the recommendation changes as W varies, holding γ and costs fixed.
-  function wealthSummary(inps) {
+  function wealthText(inps) {
     const regions = M.wealthRegions(inps.costs, inps.probabilities, inps.premiums, inps.offered, inps.gamma);
     const round = x => money(Math.round(x / 100) * 100);
-    if (regions.length === 1) return `At γ = ${gammaText(inps.gamma)}, the recommendation is ${money(regions[0].deductible)} for any W above ${round(regions[0].from)}.`;
-    return `At γ = ${gammaText(inps.gamma)}: ` + regions.map((r, i) => i === 0 ? `${money(r.deductible)} for W below ${round(r.to)}` : i === regions.length - 1 ? `${money(r.deductible)} above` : `${money(r.deductible)} up to ${round(r.to)}`).join('; ') + '.';
+    if (regions.length === 1) return `${money(regions[0].deductible)} for any W above ${round(regions[0].from)}.`;
+    return regions.map((r, i) => i === 0 ? `${money(r.deductible)} if W is below ${round(r.to)}` : i === regions.length - 1 ? `${money(r.deductible)} above` : `${money(r.deductible)} up to ${round(r.to)}`).join('; ') + '.';
   }
 
-  function updateLabels() {
-    for (const id of ['risk-gamma', 'risk-gamma-preview']) $(id).value = state.explore.gamma;
-    $('risk-gamma-value').textContent = $('gamma-preview-value').textContent = gammaText(state.explore.gamma);
-    for (const id of ['wealth', 'wealth-preview']) if (document.activeElement !== $(id)) $(id).value = state.wealth ?? '';
-    const high = state.explore.high === null ? state.counts[3] / 20 : state.explore.high;
-    $('high-prob').value = high * 100;
-    $('high-prob-value').textContent = number(high * 100) + '%';
-    $('cost-scale').value = state.explore.scale;
-    $('cost-scale-value').textContent = number(state.explore.scale, 2) + '×';
-    $('price-badge').textContent = state.priceMode === 'example' ? 'Example prices · 2026' : `Your quotes · ${state.quoteYear}`;
-    const source = calibrationSource();
-    const adjusted = Math.abs(initialGamma() - state.explore.gamma) > 1e-6;
-    $('risk-badge').textContent = { hrs: 'Risk: income choices', example: 'Risk: classroom example' }[source] + (adjusted ? ' (adjusted)' : '');
+  function bandText(inps) {
+    const r = riskResult();
+    if (!r) return '';
+    const regions = M.gammaRegions(inps.costs, inps.probabilities, inps.premiums, inps.offered, inps.wealth, r.low, Math.min(20, r.high), 60);
+    const picks = [...new Set(regions.map(x => x.deductible))].map(d => money(d));
+    return picks.length === 1 ? `The same for your whole γ range (${rangeText(r)}).` : `Across your γ range (${rangeText(r)}): ${picks.slice(0, -1).join(', ')} or ${picks.at(-1)}.`;
+  }
+
+  function compute() {
+    try {
+      const inps = inputs();
+      const result = M.compareCRRA(inps.costs, inps.probabilities, inps.premiums, inps.gamma, inps.wealth, inps.offered);
+      cached = { ...inps, result, sw: M.probabilitySwitchCRRA(inps.costs, inps.probabilities, inps.premiums, inps.gamma, inps.wealth, inps.offered), wealthLine: wealthText(inps), band: bandText(inps) };
+      problem = null;
+    } catch (error) {
+      cached = null;
+      problem = { text: error.message, page: error.page ?? (/W must be above/.test(error.message) ? 2 : undefined) };
+    }
+  }
+
+  // ---------- Figures (also used for the report) ----------
+  function utilityFigure() {
+    const W = state.wealth; const g = state.explore.gamma;
+    const u = x => M.crraUtility(x / W, g);
+    const low = .8 * W; const high = 1.2 * W; const eu = (u(low) + u(high)) / 2; const q = 1 - g;
+    const ce = W * (Math.abs(q) < 1e-10 ? Math.exp(eu) : Math.exp(Math.log1p(q * eu) / q));
+    const xs = Array.from({ length: 121 }, (_, i) => W * (.7 + .6 * i / 120));
+    const caption = g === 0 ? `With γ = 0, a 50–50 chance of ${money(low)} or ${money(high)} is worth exactly its average, ${money(W)}.` : `With γ = ${gammaText(g)}, a 50–50 chance of ${money(low)} or ${money(high)} is worth as much as ${money(ce)} for sure.`;
+    return {
+      caption,
+      data: [
+        { type: 'scatter', mode: 'lines', name: 'Utility', x: xs, y: xs.map(u), line: { color: '#195847', width: 3 }, hovertemplate: 'CHF %{x:,.0f}<extra></extra>' },
+        { type: 'scatter', mode: 'lines+markers', name: '50–50 chance', x: [low, high], y: [u(low), u(high)], line: { color: '#8ba097', dash: 'dash' }, marker: { size: 9 }, hovertemplate: 'CHF %{x:,.0f}<extra></extra>' },
+        { type: 'scatter', mode: 'markers', name: 'Same value for sure', x: [ce], y: [eu], marker: { size: 13, color: '#c9853b', symbol: 'diamond' }, hovertemplate: 'CHF %{x:,.0f} for sure<extra></extra>' }
+      ],
+      layout: { ...baseLayout, height: narrow() ? 380 : 400, margin: { l: 60, r: 18, b: 60, t: 50 }, showlegend: true, legend: { orientation: 'h', y: 1.12, font: { size: 11 } }, xaxis: { title: { text: 'Money (CHF)', standoff: 12 }, tickformat: ',.0f', fixedrange: true }, yaxis: { title: { text: 'Utility', standoff: 12 }, showticklabels: false, fixedrange: true, gridcolor: '#dfe4dc', zeroline: false }, shapes: [{ type: 'line', x0: ce, x1: W, y0: eu, y1: eu, line: { color: '#c9853b', dash: 'dot', width: 2 } }] }
+    };
+  }
+
+  function distributionFigure() {
+    return {
+      data: [{ type: 'bar', x: SHORT_RANGES, y: state.probs, text: state.probs.map(p => number(p) + '%'), textposition: 'outside', cliponaxis: false, marker: { color: ['#72977e', '#487766', '#264f43', '#c9853b'] }, hovertemplate: '%{x} CHF: %{y}%<extra></extra>' }],
+      layout: { ...baseLayout, height: narrow() ? 300 : 330, margin: { l: 55, r: 12, b: 60, t: 25 }, bargap: .3, xaxis: { title: { text: 'Billed care next year (CHF)', standoff: 12 }, type: 'category', fixedrange: true, tickfont: { size: narrow() ? 10 : 12 } }, yaxis: { title: { text: 'Chance (%)', standoff: 10 }, range: [0, Math.min(110, Math.max(50, ...state.probs.map(p => p + 12)))], fixedrange: true, gridcolor: '#dfe4dc' } }
+    };
+  }
+
+  function costFigure(view, snap = cached) {
+    const rows = snap.result.rows; const cats = rows.map(r => 'F' + r.deductible);
+    const current = Number(state.current);
+    const ticks = rows.map(r => narrow() ? String(r.deductible) : money(r.deductible) + (r.deductible === current ? '<br>current' : ''));
+    // Prefix category identifiers: Plotly treats numeric strings as category indices.
+    const xaxis = { type: 'category', categoryorder: 'array', categoryarray: cats, tickvals: cats, ticktext: ticks, title: { text: 'Deductible', standoff: 14 }, fixedrange: true, showgrid: false };
+    const layout = { ...baseLayout, height: narrow() ? 420 : 420, margin: { l: 70, r: 12, t: 50, b: 80 }, legend: { orientation: 'h', x: 0, y: 1.14, traceorder: 'normal', font: { size: 11 } }, xaxis };
+    const bestSet = new Set(snap.result.best.map(r => r.deductible));
+    if (view === 'gap') {
+      const bestCE = Math.min(...rows.map(r => r.ce)); const bestE = Math.min(...rows.map(r => r.expectedCost));
+      return { caption: 'How much more each deductible costs than the best one, with and without the charge for risk.', data: [
+        { type: 'bar', name: 'CE cost above the best', x: cats, y: rows.map(r => r.ce - bestCE), marker: { color: '#c9853b' }, hovertemplate: 'CHF %{y:,.0f}<extra></extra>' },
+        { type: 'bar', name: 'Average cost above the cheapest', x: cats, y: rows.map(r => r.expectedCost - bestE), marker: { color: '#99baa5' }, hovertemplate: 'CHF %{y:,.0f}<extra></extra>' }
+      ], layout: { ...layout, barmode: 'group', bargap: .35, yaxis: { title: { text: 'CHF per year', standoff: 8 }, rangemode: 'tozero', fixedrange: true, gridcolor: '#dfe4dc', tickformat: ',.0f' } } };
+    }
+    if (view === 'max') {
+      return { caption: 'Bars: the most you could pay out of pocket in one year (deductible plus CHF 700). Dots: the average. Premiums come on top.', data: [
+        { type: 'bar', name: 'Most out-of-pocket', x: cats, y: rows.map(r => r.maximumOOP), marker: { color: '#c7d8ce' }, hovertemplate: 'At most CHF %{y:,.0f}<extra></extra>' },
+        { type: 'scatter', mode: 'markers', name: 'Average out-of-pocket', x: cats, y: rows.map(r => r.expectedOOP), marker: { color: '#195847', size: 11 }, hovertemplate: 'Average CHF %{y:,.0f}<extra></extra>' }
+      ], layout: { ...layout, bargap: .45, yaxis: { title: { text: 'CHF per year', standoff: 8 }, rangemode: 'tozero', fixedrange: true, gridcolor: '#dfe4dc', tickformat: ',.0f' } } };
+    }
+    return { caption: 'Bars: premium plus average out-of-pocket cost. Dots: CE cost, which adds a charge for risk. The model picks the lowest dot.', data: [
+      { type: 'bar', name: 'Premium', x: cats, y: rows.map(r => r.premium), marker: { color: '#2d6b55' }, hovertemplate: 'Premium CHF %{y:,.0f}<extra></extra>' },
+      { type: 'bar', name: 'Average out-of-pocket', x: cats, y: rows.map(r => r.expectedOOP), marker: { color: '#99baa5' }, hovertemplate: 'Out-of-pocket CHF %{y:,.0f}<extra></extra>' },
+      { type: 'scatter', mode: 'markers', name: 'CE cost', x: cats, y: rows.map(r => r.ce), marker: { color: rows.map(r => bestSet.has(r.deductible) ? '#c9853b' : '#e3c29c'), size: 12, line: { color: '#fff', width: 2 } }, hovertemplate: 'CE cost CHF %{y:,.0f}<extra></extra>' }
+    ], layout: { ...layout, barmode: 'stack', bargap: .4, yaxis: { title: { text: 'CHF per year', standoff: 8 }, rangemode: 'tozero', fixedrange: true, gridcolor: '#dfe4dc', tickformat: ',.0f' } } };
+  }
+
+  function mapFigure(snap = cached) {
+    const r = riskResult();
+    const finalP = snap.binProbabilities[3] * 100;
+    const xMax = Math.min(100, Math.max(40, Math.ceil((finalP + 10) / 10) * 10));
+    const band = r ? [r.low, Math.min(20, r.high)] : null;
+    const hm = M.heatmapCRRA(snap.costs, snap.probabilities, snap.premiums, snap.offered, snap.wealth, snap.gamma, { xMax, gammaMax: band?.[1] });
+    const scale = COLORS.flatMap((c, i) => [[i / 6, c], [(i + 1) / 6, c]]);
+    const shapes = band ? [{ type: 'rect', x0: 0, x1: xMax, y0: band[0], y1: band[1], fillcolor: 'rgba(0,0,0,0)', line: { color: '#fff', width: 1.5, dash: 'dash' } }] : [];
+    return {
+      data: [
+        { type: 'heatmap', x: hm.xs, y: hm.ys, z: hm.z, zmin: -.5, zmax: 5.5, colorscale: scale, showscale: false, customdata: hm.z.map(row => row.map(i => M.DEDUCTIBLES[i])), hovertemplate: 'Chance: %{x:.0f}%<br>γ: %{y:.2f}<br>CHF %{customdata}<extra></extra>' },
+        { type: 'scatter', x: [finalP], y: [snap.gamma], mode: 'markers', marker: { symbol: 'cross', size: 17, color: '#fff', line: { color: '#203a33', width: 2 } }, hovertemplate: 'Your inputs<extra></extra>' }
+      ],
+      layout: { ...baseLayout, height: narrow() ? 380 : 430, margin: { l: 60, r: 14, t: 16, b: 70 }, showlegend: false, shapes, xaxis: { title: { text: 'Chance of costs of CHF 7,500 or more (%)', standoff: 12 }, range: [-xMax * .013, xMax * 1.013], fixedrange: true, showgrid: false }, yaxis: { title: { text: 'Risk aversion γ', standoff: 10 }, range: [0, hm.ys.at(-1)], fixedrange: true, showgrid: false } }
+    };
+  }
+
+  const plot = (id, fig) => Plotly.react(id, fig.data, fig.layout, config);
+
+  // ---------- Page rendering ----------
+  function renderRisk() {
+    const history = state.hrs; const result = riskResult(); const cut = M.hrsQuestion(history);
+    $('risk-quiz').classList.toggle('is-introduction', !state.hrsStarted);
+    $('risk-quiz').classList.toggle('is-complete', Boolean(result));
+    $('restart-risk').textContent = !state.hrsStarted ? 'Start the questions' : result ? 'Answer again' : 'Start again';
+    $('undo-risk').hidden = !history.length;
+    if (!state.hrsStarted || result) $('risk-quiz').innerHTML = '';
+    else {
+      const share = Math.abs(cut - 1 / 3) < .001 ? 'one third' : number(cut * 100, 0) + '%';
+      $('risk-quiz').innerHTML = `<div class="question-progress">Question ${history.length + 1} of 2 or 3</div><h2>Which job would you take?</h2><div class="choice-options"><button class="choice-option" data-risk-choice="certain"><span class="option-label">Job A</span><strong class="income-outcome">Fixed income</strong><small>Your income stays the same.</small></button><button class="choice-option" data-risk-choice="risky"><span class="option-label">Job B</span><strong class="income-outcome">Double, or ${share} less</strong><small>50% chance of each.</small></button></div>`;
+    }
+    $('risk-feedback').hidden = !result;
+    if (result) $('risk-feedback').innerHTML = `<h2>Done</h2><p>Your answers put your risk aversion γ ${rangeText(result)}.</p>`;
+  }
+
+  function renderGamma() {
+    const r = riskResult(); const g = state.explore.gamma;
+    $('gamma-intro').textContent = r ? (r.openUpper ? `Your answers put γ at ${gammaText(r.low)} or higher. The model starts at γ = 10. You can change it.` : `Your answers put γ ${rangeText(r)}. The model starts at ${gammaText(r.gamma)}, the middle of that range. You can change it.`) : 'You have not answered the risk questions yet, so the model uses γ = 0.5, the square-root utility from class. You can change it.';
+    for (const id of ['gamma-input', 'gamma-explore']) $(id).value = g;
+    $('gamma-value').textContent = $('gamma-explore-value').textContent = gammaText(g);
+    for (const id of ['wealth-input', 'wealth-explore']) if (document.activeElement !== $(id)) $(id).value = state.wealth ?? '';
+    $('use-elicited').disabled = Math.abs(initialGamma() - g) < 1e-9;
+    $('use-elicited').textContent = r ? 'Use my suggested value' : 'Back to γ = 0.5';
+  }
+
+  function renderCosts() {
+    $('prob-grid').innerHTML = RANGES.map((label, i) => `<div class="prob-row"><span class="prob-label">${label}</span><label class="prob-input"><span class="sr-only">Chance for ${label}</span><input type="number" data-prob="${i}" min="0" max="100" step="1" value="${Number.isFinite(state.probs[i]) ? state.probs[i] : ''}"><span>%</span></label>${i === 3 ? `<label class="field top-cost">Typical amount in this case (CHF)<input type="number" id="top-cost" min="7500" step="500" value="${Number.isFinite(state.topCost) ? state.topCost : ''}"></label>` : ''}</div>`).join('');
+    renderCostTotal();
+  }
+
+  function renderCostTotal() {
+    const total = state.probs.reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0);
+    const diff = 100 - total;
+    $('prob-total').textContent = Math.abs(diff) < 1e-9 ? 'Total: 100%' : diff > 0 ? `Total: ${number(total)}% · ${number(diff)}% still to assign` : `Total: ${number(total)}% · ${number(-diff)}% too much`;
+    $('prob-total').classList.toggle('is-off', Math.abs(diff) > 1e-9);
+    $('belief-source').innerHTML = state.beliefSource === 'example' ? 'These are example values. Replace them with your own.' : 'Your own values. <button class="text-button" id="example-beliefs">Reset to the example</button>';
+  }
+
+  function renderPrices() {
+    const personal = state.priceMode === 'personal';
+    $('price-mode').value = state.priceMode;
+    $('quote-year').value = state.quoteYear;
+    $('quote-year').disabled = !personal;
+    $('price-explanation').textContent = personal ? 'Enter next year’s monthly premiums. Untick deductibles your insurer does not offer.' : 'Example: CHF 400 a month with the CHF 300 deductible, close to the 2026 average. Higher deductibles get the largest discount the law allows. These are not real quotes.';
+    $('premium-inputs').innerHTML = M.DEDUCTIBLES.map((f, i) => `<div class="premium-item"><strong>${money(f)} deductible</strong><label class="sr-only" for="premium-${i}">Monthly premium for CHF ${f} deductible</label><input type="number" id="premium-${i}" data-premium="${i}" min="0" max="10000" step="0.01" placeholder="CHF / month" value="${personal ? state.personalMonthly[i] ?? '' : (M.EXAMPLE_PREMIUMS[i] / 12).toFixed(2)}" ${!personal || !state.offered[i] ? 'disabled' : ''}><small>CHF / month</small>${personal ? `<label class="available"><input type="checkbox" data-offered="${i}" ${state.offered[i] ? 'checked' : ''}>Offered</label>` : ''}</div>`).join('');
+    renderPriceWarnings();
   }
 
   function renderPriceWarnings() {
@@ -1147,234 +1309,86 @@ return Plotly;
     $('price-warnings').innerHTML = warnings.length ? `<strong>Check your quotes:</strong> ${warnings.map(esc).join(' ')}` : '';
   }
 
-  function updateResults(schedule = true) {
-    updateLabels();
-    renderPriceWarnings();
-    try {
-      const inps = inputs();
-      const result = M.compareCRRA(inps.costs, inps.probabilities, inps.premiums, inps.gamma, inps.wealth, inps.offered);
-      const sw = M.probabilitySwitchCRRA(inps.costs, inps.probabilities, inps.premiums, inps.gamma, inps.wealth, inps.offered);
-      const band = intervalBand(inps);
-      const wealthText = wealthSummary(inps);
-      cached = { ...inps, result, sw, band, wealthText };
-      $('wealth-switch').textContent = wealthText;
-      const revealed = state.checks.prediction !== '';
-      $('results-validation').hidden = true;
-      $('results-gate').hidden = revealed;
-      $('results-body').hidden = !revealed;
-      $('prediction-note').textContent = state.checks.prediction && state.checks.prediction !== 'none' ? `Your prediction: ${money(Number(state.checks.prediction))}.` : '';
-      $('recommended-value').textContent = result.best.map(r => money(r.deductible)).join(' / ');
-      $('recommended-context').textContent = result.best.length > 1 ? 'Tied within CHF 0.005 of CE cost' : band ? bandSummary(band) : 'Lowest certainty-equivalent cost';
-      $('neutral-value').textContent = result.cheapest.map(r => money(r.deductible)).join(' / ');
-      $('neutral-context').textContent = money(result.cheapest[0].expectedCost, 2) + ' expected annual total';
-      const gap = result.sorted.length > 1 ? result.sorted[1].ce - result.sorted[0].ce : null;
-      $('cost-chart-note').textContent = `Expected billed care: ${money(result.expectedLoss)}.` + (gap !== null ? ` The top two options differ by ${money(gap, 2)} in CE cost.` : '');
-      $('switch-value').textContent = sw ? number(sw.distance * 100, 1) + ' pp' : 'No switch';
-      $('switch-context').textContent = sw ? `At about ${number(sw.probability * 100, 1)}% in the last range: ${money(sw.left)} ↔ ${money(sw.right)}` : 'Between 0% and 100% in the last range';
-      $('coefficient-note').textContent = `CRRA γ = ${gammaText(inps.gamma)}; W = ${money(inps.wealth)}.`;
-      $('results-table').innerHTML = result.rows.map(r => `<tr class="${result.best.some(b => b.deductible === r.deductible) ? 'recommended' : ''}"><td>${money(r.deductible)}${Number(state.current) === r.deductible ? ' · current' : ''}</td><td>${money(r.premium, 2)}</td><td>${money(r.expectedOOP, 2)}</td><td>${money(r.expectedCost, 2)}</td><td>${money(r.ce, 2)}</td><td>${money(r.maximumOOP)}</td></tr>`).join('');
-      if (schedule && state.page === 3 && revealed) {
-        clearTimeout(chartTimer);
-        chartTimer = setTimeout(() => drawCharts().catch(error => message('Chart error: ' + error.message)), 100);
-      }
-    } catch (error) {
-      cached = null;
-      clearTimeout(chartTimer);
-      $('results-body').hidden = true;
-      $('results-gate').hidden = true;
-      $('results-validation').textContent = error.message;
-      $('results-validation').hidden = false;
-      $('wealth-switch').textContent = '';
-    }
-    updateReflection();
-    if (state.page === 1) drawUtility().catch(e => message(e.message));
-    if (state.page === 2) drawDistribution().catch(e => message(e.message));
+  function renderResult() {
+    const prices = state.priceMode === 'example' ? 'the example premiums' : `your ${state.quoteYear} quotes`;
+    $('inputs-line').textContent = `Based on γ = ${gammaText(state.explore.gamma)}, a budget of ${money(state.wealth || 0)}, your cost chances and ${prices}.`;
+    $('results-validation').hidden = !problem;
+    $('results-validation').innerHTML = problem ? `${esc(problem.text)}${problem.page !== undefined ? ` <button class="text-button" data-go="${problem.page}">Go to ${PAGE_NAMES[problem.page]}</button>` : ''}` : '';
+    $('results-gate').hidden = !cached || revealed();
+    $('results-body').hidden = !cached || !revealed();
+    if (!cached) return;
+    const r = cached.result;
+    $('recommended-value').textContent = r.best.map(x => money(x.deductible)).join(' / ');
+    $('recommended-context').textContent = r.best.length > 1 ? 'A tie.' : cached.band || 'Lowest CE cost.';
+    $('neutral-value').textContent = r.cheapest.map(x => money(x.deductible)).join(' / ');
+    $('neutral-context').textContent = `${money(r.cheapest[0].expectedCost)} a year on average.`;
+    $('prediction-note').textContent = state.checks.prediction && state.checks.prediction !== 'none' ? `You predicted ${money(Number(state.checks.prediction))}.` : '';
+    $('results-table').innerHTML = r.rows.map(x => `<tr class="${r.best.some(b => b.deductible === x.deductible) ? 'recommended' : ''}"><td>${money(x.deductible)}${Number(state.current) === x.deductible ? ' · current' : ''}</td><td>${money(x.premium)}</td><td>${money(x.expectedOOP)}</td><td>${money(x.expectedCost)}</td><td>${money(x.ce)}</td><td>${money(x.maximumOOP)}</td></tr>`).join('');
+  }
+
+  function renderWhatIf() {
+    const high = state.explore.high === null ? state.probs[3] / 100 : state.explore.high;
+    $('high-prob').value = high * 100;
+    $('high-prob-value').textContent = number(high * 100) + '%';
+    $('cost-scale').value = state.explore.scale;
+    $('cost-scale-value').textContent = number(state.explore.scale, 2) + '×';
+    $('whatif-gate').hidden = revealed();
+    $('whatif-body').hidden = !revealed();
+    $('whatif-pick').textContent = cached ? cached.result.best.map(x => money(x.deductible)).join(' / ') : (problem ? problem.text : '');
+    if (!cached) { $('switch-list').innerHTML = ''; return; }
+    const sw = cached.sw;
+    const chance = `Chance of costs of CHF 7,500 or more (now ${number(high * 100)}%): ` + (sw ? `the result changes at about ${number(sw.probability * 100, 1)}%.` : 'no change between 0% and 100%.');
+    $('switch-list').innerHTML = `<li><strong>Budget W:</strong> ${esc(cached.wealthLine)}</li><li>${esc(chance)}</li>`;
+  }
+
+  function renderDecision() {
+    const pick = cached && revealed() ? cached.result.best.map(x => money(x.deductible)).join(' / ') : null;
+    $('decision-summary').textContent = (pick ? `The model recommends ${pick}.` : 'See the result first.') + (state.current ? ` Your current deductible is ${money(Number(state.current))}.` : '');
+    const ready = Boolean(cached) && revealed();
+    $('export-report').disabled = !ready;
+    if (!ready && !$('export-status').textContent.startsWith('Report')) $('export-status').textContent = 'The report is available once you have seen the result.';
+    if (ready && $('export-status').textContent.startsWith('The report is available')) $('export-status').textContent = '';
+  }
+
+  function drawVisible() {
+    clearTimeout(drawTimer);
+    drawTimer = setTimeout(() => {
+      const p = state.page;
+      try {
+        let job = null;
+        if (p === 2) {
+          if (!(state.wealth > 0)) { $('utility-caption').textContent = 'Enter a budget W above zero to see the curve.'; return; }
+          const f = utilityFigure(); $('utility-caption').textContent = f.caption; job = plot('utility-chart', f);
+        } else if (p === 3) job = plot('distribution-chart', distributionFigure());
+        else if (p === 5 && cached && revealed()) { const f = costFigure(costView); $('cost-chart-caption').textContent = f.caption; job = plot('cost-chart', f); }
+        else if (p === 6 && cached && revealed()) job = plot('switch-chart', mapFigure()).then(bindMapClick);
+        if (job) job.catch(e => message('Chart error: ' + e.message));
+      } catch (e) { message('Chart error: ' + e.message); }
+    }, 60);
+  }
+
+  function bindMapClick() {
+    if ($('switch-chart')._labClickBound) return;
+    $('switch-chart').on('plotly_click', event => {
+      const point = event.points.find(p => p.data.type === 'heatmap');
+      if (!point) return;
+      state.explore.high = Math.max(0, Math.min(1, point.x / 100));
+      state.explore.gamma = Math.max(0, Math.min(20, point.y));
+      refresh();
+    });
+    $('switch-chart')._labClickBound = true;
+  }
+  $('map-legend').innerHTML = M.DEDUCTIBLES.map((f, i) => `<span><i style="background:${COLORS[i]}"></i>${money(f)}</span>`).join('');
+
+  function refresh() {
+    compute();
+    renderGamma(); renderResult(); renderWhatIf(); renderDecision();
+    drawVisible();
     persist();
   }
 
-  async function drawCharts() {
-    if (!cached) return;
-    if (typeof Plotly === 'undefined') throw new Error('The bundled chart library did not load.');
-    const snapshot = cached;
-    const rows = snapshot.result.rows;
-    const narrow = window.innerWidth < 520;
-    const current = Number(state.current);
-    // Prefix category identifiers: Plotly annotations treat numeric strings as
-    // category indices, which otherwise expands the axis to thousands of slots.
-    const cats = rows.map(r => 'F' + r.deductible);
-    const labels = rows.map(r => money(r.deductible) + (r.deductible === current ? '<br>Your current choice' : ''));
-    const deductibleData = rows.map(r => r.deductible);
-    let traces; let annotations; let yTitle; let barmode;
-    if (costView === 'gap') {
-      const bestCE = Math.min(...rows.map(r => r.ce));
-      const bestE = Math.min(...rows.map(r => r.expectedCost));
-      const text = narrow ? '' : '%{y:,.0f}';
-      traces = [
-        { type: 'bar', name: 'CE cost above the model pick', x: cats, customdata: deductibleData, y: rows.map(r => r.ce - bestCE), marker: { color: '#c9853b' }, texttemplate: text, textposition: 'outside', textfont: { size: 10 }, cliponaxis: false, hovertemplate: 'Deductible CHF %{customdata}<br>CE cost above the pick: CHF %{y:,.2f}<extra></extra>' },
-        { type: 'bar', name: 'Expected cost above the cheapest', x: cats, customdata: deductibleData, y: rows.map(r => r.expectedCost - bestE), marker: { color: '#99baa5' }, texttemplate: text, textposition: 'outside', textfont: { size: 10 }, cliponaxis: false, hovertemplate: 'Deductible CHF %{customdata}<br>Expected cost above the cheapest: CHF %{y:,.2f}<extra></extra>' }
-      ];
-      annotations = [];
-      yTitle = 'CHF above the best option';
-      barmode = 'group';
-    } else {
-      traces = [
-        { type: 'bar', name: 'Annual premium', x: cats, customdata: deductibleData, y: rows.map(r => r.premium), marker: { color: '#2d6b55' }, hovertemplate: 'Deductible CHF %{customdata}<br>Premium CHF %{y:,.2f}<extra></extra>' },
-        { type: 'bar', name: 'Expected out-of-pocket', x: cats, customdata: deductibleData, y: rows.map(r => r.expectedOOP), marker: { color: '#99baa5' }, hovertemplate: 'Deductible CHF %{customdata}<br>Expected out-of-pocket CHF %{y:,.2f}<extra></extra>' },
-        { type: 'scatter', mode: 'markers', name: 'Certainty-equivalent cost', x: cats, customdata: deductibleData, y: rows.map(r => r.ce), marker: { color: '#c9853b', size: 11, symbol: 'circle', line: { color: '#fff', width: 2 } }, hovertemplate: 'Deductible CHF %{customdata}<br>CE cost CHF %{y:,.2f}<extra></extra>' }
-      ];
-      annotations = snapshot.result.best.map(r => ({ x: 'F' + r.deductible, y: Math.max(r.ce, r.expectedCost), yshift: 17, text: snapshot.result.best.length > 1 ? 'Tie' : 'Model pick', showarrow: false, font: { size: 11, color: '#195847' } }));
-      yTitle = 'Annual cost (CHF)';
-      barmode = 'stack';
-    }
-    $('cost-chart-caption').textContent = costView === 'gap' ? 'Distance from the best option, by CE cost and by expected cost.' : 'Premium and expected out-of-pocket cost; dots show the CE cost.';
-    await Plotly.react('cost-chart', traces, { height: narrow ? 450 : 430, barmode, bargap: .4, margin: { l: narrow ? 58 : 74, r: 12, t: narrow ? 105 : 45, b: 85 }, font: chartFont, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', legend: { orientation: 'h', x: 0, y: narrow ? 1.04 : 1.15, yanchor: narrow ? 'bottom' : 'auto', traceorder: 'normal', font: { size: 11 } }, xaxis: { type: 'category', categoryorder: 'array', categoryarray: cats, tickvals: cats, ticktext: narrow ? rows.map(r => String(r.deductible)) : labels, tickangle: 0, title: { text: 'Deductible (CHF)', standoff: 18 }, fixedrange: true, tickfont: { size: 11 }, showgrid: false }, yaxis: { title: { text: yTitle, standoff: 8 }, fixedrange: true, rangemode: 'tozero', gridcolor: '#dfe4dc', zerolinecolor: '#dfe4dc', tickformat: ',.0f', nticks: 6 }, annotations }, config);
-    const finalP = snapshot.binProbabilities[3] * 100;
-    const xMax = Math.min(100, Math.max(40, Math.ceil((finalP + 10) / 10) * 10));
-    const band = snapshot.band ? [snapshot.band.gammaMin, snapshot.band.gammaMax] : null;
-    const hm = M.heatmapCRRA(snapshot.costs, snapshot.probabilities, snapshot.premiums, snapshot.offered, snapshot.wealth, snapshot.gamma, { xMax, gammaMax: band?.[1] });
-    const scale = COLORS.flatMap((c, i) => [[i / 6, c], [(i + 1) / 6, c]]);
-    const gamma = snapshot.gamma;
-    const shapes = [{ type: 'line', x0: 0, x1: xMax, y0: 0, y1: 0, line: { color: 'rgba(255,255,255,.9)', width: 1.5, dash: 'dot' } }];
-    const mapNotes = [{ x: xMax, y: 0, xanchor: 'right', yanchor: 'bottom', text: 'Risk neutral', showarrow: false, font: { size: 10, color: '#fff' } }];
-    if (band) {
-      // Outline only: a translucent fill would shift the colours towards neighbouring deductibles.
-      shapes.push({ type: 'rect', x0: 0, x1: xMax, y0: band[0], y1: band[1], fillcolor: 'rgba(0,0,0,0)', line: { color: '#fff', width: 1.5, dash: 'dash' } });
-      mapNotes.push({ x: 0, y: band[1], xanchor: 'left', yanchor: 'bottom', xshift: 4, text: 'Your ' + snapshot.band.label, showarrow: false, font: { size: 10, color: '#fff' } });
-    }
-    await Plotly.react('switch-chart', [
-      { type: 'heatmap', x: hm.xs, y: hm.ys, z: hm.z, zmin: -.5, zmax: 5.5, colorscale: scale, showscale: false, customdata: hm.z.map(row => row.map(i => M.DEDUCTIBLES[i])), hovertemplate: 'Last range: %{x:.1f}%<br>γ: %{y:.2f}<br>Recommended: CHF %{customdata}<extra></extra>' },
-      { type: 'scatter', x: [finalP], y: [gamma], mode: 'markers', name: 'Your current inputs', marker: { symbol: 'cross', size: 17, color: '#fff', line: { color: '#203a33', width: 2 } }, hovertemplate: 'Your inputs<br>Last range: %{x:.1f}%<br>γ: %{y:.2f}<extra></extra>' }
-    ], { height: narrow ? 405 : 455, margin: { l: narrow ? 65 : 79, r: 14, t: 20, b: 76 }, font: chartFont, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', showlegend: false, shapes, annotations: mapNotes, xaxis: { title: { text: 'Probability of the last spending range (%)', font: { size: narrow ? 11 : 12 }, standoff: 14 }, range: [-xMax * .013, xMax * 1.013], nticks: narrow ? 5 : 6, fixedrange: true, showgrid: false }, yaxis: { title: { text: 'Relative risk aversion γ', font: { size: narrow ? 11 : 12 }, standoff: 10 }, range: [0, hm.ys.at(-1)], fixedrange: true, tickformat: ',.0f', nticks: 6, showgrid: false } }, config);
-    $('map-legend').innerHTML = M.DEDUCTIBLES.map((f, i) => `<span><i style="background:${COLORS[i]}"></i>${money(f)}</span>`).join('');
-    if (!$('switch-chart')._labClickBound) {
-      $('switch-chart').on('plotly_click', event => {
-        const point = event.points.find(p => p.data.type === 'heatmap');
-        if (!point) return;
-        state.explore.high = Math.max(0, Math.min(1, point.x / 100));
-        state.explore.gamma = Math.max(0, Math.min(20, point.y));
-        updateResults();
-      });
-      $('switch-chart')._labClickBound = true;
-    }
-    await drawExposure(snapshot);
-    plotted = true;
-  }
-
-  function renderRisk() {
-    const history = state.hrs; const result = riskResult(); const cut = M.hrsQuestion(history);
-    $('risk-quiz').classList.toggle('is-introduction', !state.hrsStarted);
-    $('risk-quiz').classList.toggle('is-complete', Boolean(result));
-    $('restart-risk').textContent = !state.hrsStarted ? 'Start the income choices' : result ? 'Repeat the income choices' : 'Restart';
-    $('undo-risk').hidden = !history.length;
-    if (!state.hrsStarted) $('risk-quiz').innerHTML = '';
-    else if (result) $('risk-quiz').innerHTML = '<p class="small muted">Income choices completed.</p>';
-    else {
-      const percent = Math.abs(cut - 1 / 3) < .001 ? 'one third' : number(cut * 100, 0) + '%';
-      $('risk-quiz').innerHTML = `<div class="question-progress">Choice ${history.length + 1} · two or three choices in total</div><h2>Which income would you choose?</h2><div class="choice-options"><button class="choice-option" data-risk-choice="certain"><span class="option-label">Guaranteed</span><strong class="income-outcome">Baseline income</strong><small>Every year for life</small></button><button class="choice-option" data-risk-choice="risky"><span class="option-label">Equal chances</span><strong class="income-outcome">Twice the baseline</strong><span>or ${percent} less than the baseline</span><small>The outcome lasts for life</small></button></div>`;
-    }
-    $('risk-feedback').hidden = !result;
-    if (result) {
-      const interval = result.openUpper ? `γ ≥ ${gammaText(result.low)}` : `${gammaText(result.low)} ≤ γ ≤ ${gammaText(result.high)}`;
-      const start = result.openUpper ? 'The upper end is unbounded. We use γ = 10 as a teaching starting value.' : `We start at the interval midpoint, γ = ${gammaText(result.gamma)}.`;
-      const edge = result.low === 0 ? ' These answers also allow risk seeking; this exercise explores non-negative γ.' : '';
-      $('risk-feedback').innerHTML = `<h2>Your answers imply ${interval}</h2><p>Conditional on CRRA and consistent answers. ${start}${edge} Move the slider to see how much the conclusion depends on this value.</p>`;
-    }
-    $('use-elicited').disabled = !result;
-    $('utility-source').textContent = result ? 'Your income-choice range supplies the starting value. You can revise it below.' : 'Classroom example: γ = 0.5 gives the same choices as square-root utility. Complete the questions for your own starting range.';
-  }
-
-  async function drawUtility() {
-    const W = state.wealth; const g = state.explore.gamma;
-    if (!(W > 0) || !Number.isFinite(W)) { $('utility-caption').textContent = 'Enter a positive W to draw the curve.'; await Plotly.react('utility-chart', [], { height: 380 }, config); return; }
-    const u = x => M.crraUtility(x / W, g);
-    const xs = Array.from({ length: 121 }, (_, i) => W * (.8 + .4 * i / 120));
-    const low = .8 * W; const high = 1.2 * W; const eu = (u(low) + u(high)) / 2;
-    const q = 1 - g;
-    const ce = W * (Math.abs(q) < 1e-10 ? Math.exp(eu) : Math.exp(Math.log1p(q * eu) / q));
-    const narrow = window.innerWidth < 520;
-    await Plotly.react('utility-chart', [
-      { type: 'scatter', mode: 'lines', name: 'Utility curve', x: xs, y: xs.map(u), line: { color: '#195847', width: 3 }, hovertemplate: 'Wealth: CHF %{x:,.0f}<br>Rescaled utility: %{y:.3f}<extra></extra>' },
-      { type: 'scatter', mode: 'lines+markers', name: 'Two equally likely outcomes', x: [low, high], y: [u(low), u(high)], line: { color: '#8ba097', dash: 'dash' }, marker: { size: 8 }, hovertemplate: '50%: CHF %{x:,.0f}<extra></extra>' },
-      { type: 'scatter', mode: 'markers', name: 'Utility of expected wealth', x: [W], y: [0], marker: { size: 11, color: '#195847' }, hovertemplate: 'u(E[w]) = u(W)<br>CHF %{x:,.0f}<extra></extra>' },
-      { type: 'scatter', mode: 'markers', name: 'Expected utility', x: [W], y: [eu], marker: { size: 11, color: '#c9853b', symbol: 'diamond' }, hovertemplate: 'E[u(w)] = %{y:.3f}<extra></extra>' },
-      { type: 'scatter', mode: 'markers', name: 'Certainty-equivalent wealth', x: [ce], y: [eu], marker: { size: 11, color: '#536a87', symbol: 'cross' }, hovertemplate: 'Certain wealth with the same utility:<br>CHF %{x:,.0f}<extra></extra>' }
-    ], { height: narrow ? 480 : 440, margin: { l: 65, r: 18, b: 60, t: narrow ? 160 : 110 }, font: chartFont, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', legend: { orientation: 'h', y: 1.1, yanchor: 'bottom', font: { size: 11 } }, xaxis: { title: { text: 'Wealth (CHF)', standoff: 12 }, tickformat: ',.0f', fixedrange: true }, yaxis: { title: { text: 'Utility (rescaled)', standoff: 12 }, fixedrange: true, gridcolor: '#dfe4dc', zerolinecolor: '#dfe4dc' }, shapes: [{ type: 'line', x0: ce, x1: W, y0: eu, y1: eu, line: { color: '#c9853b', dash: 'dot', width: 2 } }] }, config);
-    $('utility-caption').textContent = `Expected wealth is ${money(W)}. The equally valued sure amount is ${money(ce, 2)}: a risk premium of ${money(W - ce, 2)} for this illustration. ` + (g === 0 ? 'With γ = 0, the utility curve is straight and the risk premium is zero.' : 'The concave curve puts expected utility below the utility of expected wealth.');
-  }
-
-  async function drawDistribution() {
-    const total = state.counts.reduce((a, b) => a + b, 0); const narrow = window.innerWidth < 520;
-    const labels = ['Below 500', '500–2,499', '2,500–7,499', '7,500+'];
-    await Plotly.react('distribution-chart', [{ type: 'bar', x: labels, y: state.counts.map(n => n * 5), text: state.counts.map(n => n * 5 + '%'), textposition: 'outside', cliponaxis: false, marker: { color: ['#72977e', '#487766', '#264f43', '#c9853b'] }, customdata: state.counts, hovertemplate: '%{x} CHF<br>%{y}% = %{customdata} tokens<extra></extra>' }], { height: narrow ? 340 : 330, margin: { l: 60, r: 18, b: 65, t: 30 }, font: chartFont, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', bargap: .25, xaxis: { title: { text: 'Annual billed care (CHF)', standoff: 12 }, type: 'category', fixedrange: true, tickfont: { size: narrow ? 10 : 12 } }, yaxis: { title: { text: 'Probability (%)', standoff: 12 }, range: [0, Math.min(110, Math.max(55, ...state.counts.map(n => n * 5 + 10)))], fixedrange: true, gridcolor: '#dfe4dc' } }, config);
-    $('distribution-caption').textContent = total === 20 ? `${beliefSummary()} These are your beliefs; the distribution is not a clinical forecast. ${state.withinBin === 'spread' ? 'Within each bounded range the calculation spreads costs evenly.' : 'The calculation uses your representative cost for each range.'}` : `${20 - total} tokens remain unallocated. The bars currently add up to ${total * 5}%; the tool waits for 100% before recommending a deductible.`;
-  }
-
-  async function drawExposure(snapshot = cached) {
-    if (!snapshot) return;
-    const rows = snapshot.result.rows; const cats = rows.map(r => 'F' + r.deductible);
-    await Plotly.react('exposure-chart', [
-      { type: 'bar', name: 'Standard annual out-of-pocket cap', x: cats, y: rows.map(r => r.maximumOOP), marker: { color: '#c7d8ce' }, hovertemplate: 'Annual cap: CHF %{y:,.0f}<extra></extra>' },
-      { type: 'scatter', mode: 'markers', name: 'Expected out-of-pocket', x: cats, y: rows.map(r => r.expectedOOP), marker: { color: '#195847', size: 11 }, hovertemplate: 'Expected out-of-pocket: CHF %{y:,.2f}<extra></extra>' }
-    ], { height: 340, margin: { l: 65, r: 16, t: 85, b: 60 }, font: chartFont, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', legend: { orientation: 'h', y: 1.12, font: { size: 11 } }, bargap: .45, xaxis: { title: { text: 'Deductible (CHF)', standoff: 12 }, type: 'category', tickvals: cats, ticktext: rows.map(r => String(r.deductible)), fixedrange: true }, yaxis: { title: { text: 'Out-of-pocket (CHF)', standoff: 12 }, rangemode: 'tozero', fixedrange: true, gridcolor: '#dfe4dc' } }, config);
-    $('exposure-caption').textContent = 'At CHF 300, standard annual cost-sharing is capped at CHF 1,000; at CHF 2,500 it is CHF 3,200. Premiums are additional. Hospital daily contributions and other exceptions are outside this calculation. Payment timing and borrowing constraints can matter even when annual expected costs are affordable.';
-  }
-
-  function beliefSummary() {
-    if (state.counts.reduce((s, n) => s + n, 0) !== 20) return '';
-    try {
-      checkCosts();
-      const s = M.binScenarios(state.counts.map(c => c / 20), state.costs, state.withinBin === 'spread');
-      const mean = s.costs.reduce((sum, c, i) => sum + c * s.probabilities[i], 0);
-      return `Average implied by your tokens: about ${money(Math.round(mean / 10) * 10)} a year` + (Number.isFinite(state.bestGuess) ? ` (your best guess: ${money(state.bestGuess)}).` : '.');
-    } catch (_) { return ''; }
-  }
-
-  function validateCostField(i) {
-    const input = $('bins').querySelector(`[data-cost="${i}"]`);
-    if (!input) return;
-    const ok = validCost(state.costs[i], i);
-    input.setAttribute('aria-invalid', String(!ok));
-    $('cost-error-' + i).hidden = ok;
-    $('cost-error-' + i).textContent = ok ? '' : `Enter ${money(BIN_MIN[i])}${i === 3 ? ' or more' : ` to ${money(Math.floor(BIN_MAX[i]))}`}.`;
-  }
-
-  function renderBeliefs() {
-    const total = state.counts.reduce((s, n) => s + n, 0);
-    const spread = state.withinBin === 'spread';
-    $('belief-source').textContent = state.beliefSource === 'example' ? 'Example allocation' : 'My allocation';
-    $('token-bank').innerHTML = `<strong>${total} / 20 tokens allocated${total < 20 ? ` · ${20 - total} remaining` : ''}</strong><div class="token-dots" aria-hidden="true">${Array.from({ length: 20 }, (_, i) => `<i class="token-dot ${i < total ? '' : 'empty'}"></i>`).join('')}</div>`;
-    $('bins').innerHTML = state.counts.map((count, i) => {
-      const cost = spread && i < 3 ? `<p class="bin-spread">Spread evenly from ${money(BIN_MIN[i])} to ${money(BIN_MIN[i + 1])}</p>` : `<label class="field">${i === 3 ? 'Cost if this happens (CHF)' : 'Representative cost (CHF)'}<input type="number" data-cost="${i}" min="${BIN_MIN[i]}" max="${BIN_MAX[i]}" step="1" value="${Number.isFinite(state.costs[i]) ? state.costs[i] : ''}" aria-describedby="cost-error-${i}"><small class="field-error" id="cost-error-${i}" hidden></small></label>`;
-      return `<article class="bin"><h3>${BIN_LABELS[i]}</h3><div class="bin-token-field" aria-label="${count} token${count === 1 ? '' : 's'}">${Array.from({ length: count }, () => '<i class="token-dot" aria-hidden="true"></i>').join('')}</div><div class="bin-value">${count * 5}%</div><div class="bin-controls"><button class="button" data-token="${i}" data-change="-1" aria-label="Remove a token from range ${i + 1}" ${count === 0 ? 'disabled' : ''}>−</button><span class="bin-count">${count} token${count === 1 ? '' : 's'}</span><button class="button" data-token="${i}" data-change="1" aria-label="Add a token to range ${i + 1}" ${total === 20 ? 'disabled' : ''}>+</button></div>${cost}</article>`;
-    }).join('');
-    state.costs.forEach((_, i) => validateCostField(i));
-    $('belief-summary').textContent = beliefSummary();
-    $('within-bin').value = state.withinBin;
-    $('record-beliefs').disabled = total !== 20;
-    $('belief-confidence').value = state.beliefConfidence;
-  }
-
-  function renderPrices() {
-    const personal = state.priceMode === 'personal';
-    $('price-mode').value = state.priceMode;
-    $('quote-year').value = state.quoteYear;
-    $('quote-year').disabled = !personal;
-    $('price-explanation').textContent = personal ? 'Enter next year’s monthly premiums. Untick deductibles your insurer does not offer.' : 'Example: CHF 400 a month with the CHF 300 deductible (2026 average across all insured: CHF 393.30). Higher deductibles get the maximum legal discount, 70% of the extra deductible. Not actual quotes.';
-    $('premium-inputs').innerHTML = M.DEDUCTIBLES.map((f, i) => `<div class="premium-item"><strong>${money(f)} deductible</strong><label class="sr-only" for="premium-${i}">Monthly premium for CHF ${f} deductible</label><input type="number" id="premium-${i}" data-premium="${i}" min="0" max="10000" step="0.01" placeholder="Monthly CHF" value="${personal ? state.personalMonthly[i] ?? '' : (M.EXAMPLE_PREMIUMS[i] / 12).toFixed(2)}" ${!personal || !state.offered[i] ? 'disabled' : ''}><small>CHF / month</small>${personal ? `<label class="available"><input type="checkbox" data-offered="${i}" ${state.offered[i] ? 'checked' : ''}>Available</label>` : ''}</div>`).join('');
-  }
-
-  function updateReflection() {
-    $('cmp-model').textContent = cached ? cached.result.best.map(r => money(r.deductible)).join(' / ') : 'Inputs incomplete';
-    $('cmp-current').textContent = state.current ? money(Number(state.current)) : 'Not provided';
-    $('cmp-planned').textContent = state.planned ? money(Number(state.planned)) : 'Not decided';
-    const ready = Boolean(cached) && state.checks.prediction !== '';
-    $('export-report').disabled = !ready;
-    if (!ready && !$('export-status').textContent.startsWith('Report')) $('export-status').textContent = cached ? 'Open the results first.' : '';
-    if (ready && $('export-status').textContent.startsWith('Open the results')) $('export-status').textContent = '';
-  }
-
   function navigate(page, scroll = true) {
-    state.page = Math.max(0, Math.min(4, page));
+    state.page = Math.max(0, Math.min(7, page));
     document.querySelectorAll('[data-page]').forEach(el => { el.hidden = Number(el.dataset.page) !== state.page; });
     document.querySelectorAll('[data-step]').forEach(el => {
       const active = Number(el.dataset.step) === state.page;
@@ -1386,14 +1400,36 @@ return Plotly;
       } else el.removeAttribute('aria-current');
     });
     $('global-message').hidden = true;
-    if (state.page === 1) drawUtility().catch(e => message(e.message));
-    if (state.page === 2) drawDistribution().catch(e => message(e.message));
-    if (state.page === 3) updateResults();
-    if (state.page === 4) updateReflection();
+    refresh();
     if (scroll) window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  // ---------- Tasks ----------
+  function checkTask(kind) {
+    if (!cached) return;
+    const input = $(kind === 'flip' ? 'task-flip' : 'task-premium');
+    const feedback = $(kind === 'flip' ? 'task-flip-feedback' : 'task-premium-feedback');
+    const value = input.value === '' ? NaN : Number(input.value);
+    if (kind === 'flip') {
+      const regions = M.gammaRegions(cached.costs, cached.probabilities, cached.premiums, cached.offered, cached.wealth, 0, 20);
+      const bounds = regions.slice(1).map(r => r.from);
+      state.tasks.flipGamma = Number.isFinite(value) ? value : null;
+      if (!bounds.length) feedback.textContent = `No change: ${money(regions[0].deductible)} for every γ from 0 to 20.`;
+      else if (!Number.isFinite(value)) feedback.textContent = 'Enter a number.';
+      else {
+        const nearest = bounds.reduce((b, x) => Math.abs(x - value) < Math.abs(b - value) ? x : b);
+        const k = bounds.indexOf(nearest);
+        feedback.textContent = Math.abs(nearest - value) <= Math.max(.1, .03 * nearest) ? `Correct: at about γ = ${gammaText(nearest)} it changes from ${money(regions[k].deductible)} to ${money(regions[k + 1].deductible)}.` : `Not quite. Try a ${nearest > value ? 'higher' : 'lower'} γ.`;
+      }
+    } else {
+      const best = cached.result.best[0];
+      state.tasks.riskPremium = Number.isFinite(value) ? value : null;
+      feedback.textContent = !Number.isFinite(value) ? 'Enter a number.' : Math.abs(value - best.riskPremium) <= 1 ? `Correct: ${money(best.ce, 2)} − ${money(best.expectedCost, 2)} = ${money(best.riskPremium, 2)}.` : 'Not quite. Use the highlighted row: CE cost minus average total.';
+    }
     persist();
   }
 
+  // ---------- Save, load, report ----------
   function download(name, content, type) {
     const blob = new Blob([content], { type });
     const url = URL.createObjectURL(blob);
@@ -1406,182 +1442,148 @@ return Plotly;
     message('Progress file saved.');
   }
 
-  // Accepts version 1 files (representative costs only) and version 2 files.
-  // Values that may be half-typed (costs, quotes, answers) fall back to defaults.
+  // Reads progress files from all versions. Versions 1–3 used a CARA model:
+  // their risk answers are archived and the income questions are asked again.
   function readState(raw) {
-    if (!raw || ![1, 2, 3, 4].includes(raw.version)) throw new Error('This is not a supported Deductible Lab progress file.');
+    if (!raw || ![1, 2, 3, 4, 5].includes(raw.version)) throw new Error('This is not a Deductible Lab progress file.');
     const next = defaultState();
     const validD = x => x === '' || M.DEDUCTIBLES.includes(Number(x));
     const finiteIn = (x, lo, hi) => Number.isFinite(x) && x >= lo && x <= hi ? x : null;
-    if (!validD(raw.current) || !validD(raw.planned) || !validD(raw.after ?? '')) throw new Error('Invalid deductible in progress file.');
+    if (!validD(raw.current ?? '') || !validD(raw.planned ?? '') || !validD(raw.after ?? '')) throw new Error('Invalid deductible in progress file.');
     next.current = raw.current ? String(raw.current) : ''; next.planned = raw.planned ? String(raw.planned) : ''; next.after = raw.after ? String(raw.after) : '';
-    if (raw.version === 4) {
-      if (!Array.isArray(raw.hrs) || raw.hrs.length > 3) throw new Error('Invalid income-choice answers.');
+    if (raw.version >= 4) {
+      if (!Array.isArray(raw.hrs) || raw.hrs.length > 3) throw new Error('Invalid risk answers.');
       M.hrsResult(raw.hrs);
       next.hrs = [...raw.hrs]; next.hrsStarted = Boolean(raw.hrsStarted);
-      next.wealth = finiteIn(raw.wealth, 1, 10000000);
-      next.wealthBaseline = finiteIn(raw.wealthBaseline, 1, 10000000) ?? 10000;
+      next.wealth = finiteIn(raw.wealth, 1, 10000000) ?? 10000;
       next.legacyRisk = raw.legacyRisk ?? null;
+      next.explore.gamma = finiteIn(raw.explore?.gamma, 0, 20) ?? .5;
+    } else next.legacyRisk = { model: 'CARA', lotteryAnswers: raw.quiz ?? [], costAnswers: raw.lossQuiz ?? [], fee: raw.explore?.fee ?? null };
+    if (raw.version === 5) {
+      if (!Array.isArray(raw.probs) || raw.probs.length !== 4) throw new Error('Invalid cost chances.');
+      next.probs = raw.probs.map(p => finiteIn(p, 0, 100) ?? 0);
+      next.topCost = finiteIn(raw.topCost, 7500, 10000000) ?? 10000;
     } else {
-      next.legacyRisk = { model: 'CARA', lotteryAnswers: raw.quiz ?? [], costAnswers: raw.lossQuiz ?? [], fee: raw.explore?.fee ?? null };
-      next.page = 1;
+      if (!Array.isArray(raw.counts) || raw.counts.length !== 4 || raw.counts.some(x => !Number.isInteger(x) || x < 0 || x > 20)) throw new Error('Invalid cost chances.');
+      next.probs = raw.counts.map(c => c * 5);
+      next.topCost = finiteIn(raw.costs?.[3], 7500, 10000000) ?? 10000;
     }
-    if (!Array.isArray(raw.counts) || raw.counts.length !== 4 || raw.counts.some(x => !Number.isInteger(x) || x < 0 || x > 20) || raw.counts.reduce((s, n) => s + n, 0) > 20) throw new Error('Invalid token allocation.');
-    if (!Array.isArray(raw.costs) || raw.costs.length !== 4) throw new Error('Invalid representative costs.');
-    next.counts = [...raw.counts]; next.costs = raw.costs.map((x, i) => validCost(x, i) ? x : DEFAULT_COSTS[i]);
-    next.withinBin = raw.version === 1 || raw.withinBin === 'point' ? 'point' : 'spread';
-    next.bestGuess = finiteIn(raw.bestGuess, 0, 1000000);
     next.beliefSource = raw.beliefSource === 'personal' ? 'personal' : 'example';
-    next.beliefConfidence = ['', 'low', 'some', 'high'].includes(raw.beliefConfidence) ? raw.beliefConfidence : '';
     next.priceMode = raw.priceMode === 'personal' ? 'personal' : 'example';
-    if (!Number.isInteger(raw.quoteYear) || raw.quoteYear < 2020 || raw.quoteYear > 2100) throw new Error('Invalid quote year.');
-    next.quoteYear = raw.quoteYear;
-    if (!Array.isArray(raw.personalMonthly) || raw.personalMonthly.length !== 6) throw new Error('Invalid premium quote.');
-    next.personalMonthly = raw.personalMonthly.map(x => finiteIn(x, 0, 10000));
-    if (!Array.isArray(raw.offered) || raw.offered.length !== 6 || raw.offered.some(x => typeof x !== 'boolean')) throw new Error('Invalid available options.');
-    next.offered = [...raw.offered];
-    const e = raw.explore;
-    if (!e || !Number.isFinite(e.scale) || e.scale < .25 || e.scale > 3 || (e.high !== null && (!Number.isFinite(e.high) || e.high < 0 || e.high > 1))) throw new Error('Invalid exploration parameters.');
-    const gamma = raw.version === 4 ? finiteIn(e.gamma, 0, 20) : .5;
-    if (gamma === null) throw new Error('Invalid risk-aversion parameter.');
-    next.explore = { gamma, high: e.high, scale: e.scale };
-    if (raw.initialBeliefs !== null) {
-      const b = raw.initialBeliefs;
-      if (!b || !Array.isArray(b.counts) || b.counts.length !== 4 || b.counts.some(x => !Number.isInteger(x) || x < 0 || x > 20) || b.counts.reduce((s, n) => s + n, 0) !== 20 || !Array.isArray(b.costs) || b.costs.length !== 4) throw new Error('Invalid initial belief snapshot.');
-      next.initialBeliefs = { counts: [...b.counts], costs: b.costs.map((x, i) => validCost(x, i) ? x : DEFAULT_COSTS[i]), source: b.source === 'personal' ? 'personal' : 'example', withinBin: b.withinBin === 'spread' ? 'spread' : 'point' };
-    }
+    next.quoteYear = Number.isInteger(raw.quoteYear) && raw.quoteYear >= 2020 && raw.quoteYear <= 2100 ? raw.quoteYear : 2027;
+    if (Array.isArray(raw.personalMonthly) && raw.personalMonthly.length === 6) next.personalMonthly = raw.personalMonthly.map(x => finiteIn(x, 0, 10000));
+    if (Array.isArray(raw.offered) && raw.offered.length === 6 && raw.offered.every(x => typeof x === 'boolean')) next.offered = [...raw.offered];
+    const e = raw.explore ?? {};
+    next.explore.high = e.high === null || e.high === undefined ? null : finiteIn(e.high, 0, 1);
+    next.explore.scale = finiteIn(e.scale, .25, 3) ?? 1;
     const checks = raw.checks ?? {};
     next.checks = { oop1: finiteIn(checks.oop1, 0, 1000000), oop2: finiteIn(checks.oop2, 0, 1000000), prediction: checks.prediction === 'none' || (checks.prediction && M.DEDUCTIBLES.includes(Number(checks.prediction))) ? String(checks.prediction) : '' };
     const tasks = raw.tasks ?? {};
     next.tasks = { flipGamma: finiteIn(tasks.flipGamma, 0, 20), riskPremium: finiteIn(tasks.riskPremium, -1000000, 1000000) };
-    for (const key of Object.keys(next.reflections)) next.reflections[key] = typeof raw.reflections?.[key] === 'string' ? raw.reflections[key].slice(0, 15000) : '';
-    next.page = raw.version < 4 ? 1 : Number.isInteger(raw.page) && raw.page >= 0 && raw.page <= 4 ? raw.page : 0;
+    const text = x => typeof x === 'string' ? x.slice(0, 15000) : '';
+    const old = raw.reflections ?? {};
+    if (raw.version === 5) for (const key of Object.keys(next.reflections)) next.reflections[key] = text(old[key]);
+    else {
+      // Earlier versions had four questions; keep every answer.
+      next.reflections.choice = text(old.choice);
+      next.reflections.uncertainty = [old.risk, old.beliefs, old.switch].map(text).filter(Boolean).join('\n\n').slice(0, 15000);
+    }
+    next.page = raw.version < 4 ? 1 : Number.isInteger(raw.page) ? Math.max(0, Math.min(7, raw.version === 5 ? raw.page : { 0: 0, 1: 1, 2: 3, 3: 5, 4: 7 }[raw.page] ?? 0)) : 0;
     return next;
   }
 
   function syncUI() {
     $('current-deductible').value = state.current; $('planned-deductible').value = state.planned; $('after-deductible').value = state.after;
-    $('best-guess').value = state.bestGuess ?? '';
     OOP_CHECKS.forEach(c => { $(c.id).value = state.checks[c.key] ?? ''; });
-    $('oop-feedback').textContent = '';
     $('prediction').value = state.checks.prediction;
     $('task-flip').value = state.tasks.flipGamma ?? ''; $('task-premium').value = state.tasks.riskPremium ?? '';
-    $('task-flip-feedback').textContent = ''; $('task-premium-feedback').textContent = ''; $('export-status').textContent = '';
-    for (const [key, value] of Object.entries(state.reflections)) $('reflection-' + key).value = value;
-    renderRisk(); renderBeliefs(); renderPrices(); updateResults(false); navigate(state.page, false);
-  }
-
-  function checkTask(kind) {
-    if (!cached) return;
-    const input = $(kind === 'flip' ? 'task-flip' : 'task-premium');
-    const feedback = $(kind === 'flip' ? 'task-flip-feedback' : 'task-premium-feedback');
-    const value = input.value === '' ? NaN : Number(input.value);
-    if (kind === 'flip') {
-      const regions = M.gammaRegions(cached.costs, cached.probabilities, cached.premiums, cached.offered, cached.wealth, 0, 20);
-      const bounds = regions.slice(1).map(r => r.from);
-      state.tasks.flipGamma = Number.isFinite(value) ? value : null;
-      if (!bounds.length) { feedback.textContent = `No switch: ${money(regions[0].deductible)} through γ = 0–20.`; return; }
-      if (!Number.isFinite(value)) { feedback.textContent = 'Enter a number.'; return; }
-      const nearest = bounds.reduce((b, x) => Math.abs(x - value) < Math.abs(b - value) ? x : b);
-      const k = bounds.indexOf(nearest);
-      if (Math.abs(nearest - value) <= Math.max(.1, .03 * nearest)) {
-        feedback.textContent = `Correct: at about γ = ${gammaText(nearest)} it changes from ${money(regions[k].deductible)} to ${money(regions[k + 1].deductible)}.` + (bounds.length > 1 ? ` (${bounds.length} switches in total.)` : '');
-      } else feedback.textContent = `Not quite; try a ${nearest > value ? 'higher' : 'lower'} γ.`;
-    } else {
-      const best = cached.result.best[0];
-      state.tasks.riskPremium = Number.isFinite(value) ? value : null;
-      if (!Number.isFinite(value)) { feedback.textContent = 'Enter a number.'; return; }
-      feedback.textContent = Math.abs(value - best.riskPremium) <= 1 ? `Correct: ${money(best.ce, 2)} − ${money(best.expectedCost, 2)} = ${money(best.riskPremium, 2)}.` : 'Not quite. Use the highlighted row under “See the numbers”.';
-    }
-    persist();
+    for (const id of ['oop-feedback', 'task-flip-feedback', 'task-premium-feedback', 'export-status', 'prediction-status']) $(id).textContent = '';
+    for (const key of Object.keys(state.reflections)) $('reflection-' + key).value = state.reflections[key];
+    renderRisk(); renderCosts(); renderPrices(); navigate(state.page, false);
   }
 
   async function exportReport() {
-    if (!cached) return;
+    if (!cached || !revealed()) return;
     $('export-report').disabled = true;
     $('export-status').textContent = 'Preparing report…';
     try {
-      await drawCharts(); await drawUtility(); await drawDistribution();
-      const ids = ['utility-chart', 'distribution-chart', 'cost-chart', 'exposure-chart', 'switch-chart'];
-      const images = await Promise.all(ids.map(id => Plotly.toImage(id, { format: 'svg', width: 1000, height: 500 })));
       const c = cached; const r = riskResult();
-      const risk = r ? `HRS income-choice range: γ ${gammaText(r.low)} to ${gammaText(r.high)}. Starting value ${gammaText(r.gamma)}${r.openUpper ? ' (teaching choice for an unbounded interval)' : ' (interval midpoint)'}. Responses: ${state.hrs.join(', ')}.` : 'Income choices incomplete; the classroom example supplies the starting value.';
-      const rows = c.result.rows.map(x => `<tr><td>${money(x.deductible)}</td><td>${money(x.premium, 2)}</td><td>${money(x.expectedOOP, 2)}</td><td>${money(x.expectedCost, 2)}</td><td>${money(x.ce, 2)}</td><td>${money(x.maximumOOP)}</td></tr>`).join('');
-      const labels = { risk: 'Risk preference reflection', beliefs: 'Cost-belief reflection', choice: 'Actual decision', switch: 'What would flip the choice?' };
-      const source = state.priceMode === 'example' ? '2026 teaching premiums with maximum discounts' : `Own quotes for ${state.quoteYear}`;
-      const warnings = state.priceMode === 'personal' ? M.quoteWarnings(state.personalMonthly, state.offered) : [];
+      const figures = [utilityFigure(), distributionFigure(), costFigure('average', c), costFigure('max', c), mapFigure(c)];
+      const images = await Promise.all(figures.map(f => Plotly.toImage({ data: f.data, layout: { ...f.layout, width: 1000, height: 480 } }, { format: 'svg', width: 1000, height: 480 })));
+      const img = (i, alt) => `<img src="${esc(images[i])}" alt="${alt}">`;
+      const d = x => x ? money(Number(x)) : 'not stated';
       const oopRight = OOP_CHECKS.filter(q => Number.isFinite(state.checks[q.key]) && Math.abs(state.checks[q.key] - M.outOfPocket(q.loss, q.deductible)) < .5).length;
-      const fig = (i, title, caption = '') => `<h2>${title}</h2><img src="${esc(images[i])}" alt="${title}"><p>${esc(caption)}</p>`;
-      const mapLegend = M.DEDUCTIBLES.map((f, i) => `<span style="display:inline-block;margin-right:15px"><span style="color:${COLORS[i]}">■</span> ${money(f)}</span>`).join('');
-      const initial = state.initialBeliefs ? `<p>Saved initial allocation: ${state.initialBeliefs.counts.join(', ')} tokens; costs ${state.initialBeliefs.costs.map(x => money(x)).join(', ')}; ${esc(state.initialBeliefs.withinBin)} within-range assumption.</p>` : '';
-      const legacy = state.legacyRisk ? `<details><summary>Archived answers from the earlier CARA version</summary><pre>${esc(JSON.stringify(state.legacyRisk, null, 2))}</pre></details>` : '';
-      const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My deductible reflection</title><style>body{font:16px/1.6 system-ui;color:#203a33;max-width:1000px;margin:35px auto;padding:25px}h1{font-size:38px;font-weight:500}h2{margin-top:35px;font-size:24px}img{width:100%}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #d7dfd8;padding:9px;text-align:right}td:first-child,th:first-child{text-align:left}.reflection{white-space:pre-wrap}.small{font-size:13px;color:#64756e}button{padding:10px 18px;background:#195847;color:white;border:0;border-radius:6px}a{color:#195847}.wrap{overflow:auto}pre{white-space:pre-wrap}@media print{body{margin:0;padding:10px}button{display:none}img{break-inside:avoid}h2{break-after:avoid}}</style></head><body><button onclick="window.print()">Print / save as PDF</button><h1>My deductible reflection</h1><p class="small">Insurance Management · ${new Date().toISOString().slice(0, 10)}</p><p><strong>Model recommendation:</strong> ${c.result.best.map(x => money(x.deductible)).join(' / ')} · <strong>Lowest expected cost:</strong> ${c.result.cheapest.map(x => money(x.deductible)).join(' / ')}</p><p>Current deductible: ${state.current ? money(Number(state.current)) : 'not stated'} · Before the exercise: ${state.planned ? money(Number(state.planned)) : 'not decided'} · After the exercise: ${state.after ? money(Number(state.after)) : 'not decided'}.</p><p>Prediction: ${state.checks.prediction === 'none' ? 'none' : money(Number(state.checks.prediction))}. Hand calculations correct: ${oopRight} of 2.</p><h2>Preferences and wealth</h2><p>${esc(risk)}</p><p>Used in the comparison: γ = ${gammaText(c.gamma)}, W = ${money(c.wealth)} (budget for next year from which premiums and bills are paid).</p><p>${esc(c.wealthText)}</p>${c.band ? `<p>${esc(bandSummary(c.band))}.</p>` : ''}${legacy}${fig(0, 'Utility and certainty equivalent', $('utility-caption').textContent)}<h2>Cost beliefs and quotes</h2><p>Source: ${esc(state.beliefSource)}. Tokens: ${state.counts.join(', ')} of 20. Costs within bounded ranges: ${state.withinBin === 'spread' ? 'spread evenly' : 'one representative per range'}. Representative costs: ${state.costs.map(x => money(x)).join(', ')}.</p><p>${esc(beliefSummary())} Confidence: ${esc(state.beliefConfidence || 'not stated')}.</p>${initial}${fig(1, 'Entered cost distribution', 'This chart shows the entered probabilities before sensitivity changes.')}<p>Calculation after sensitivity changes: range probabilities ${c.binProbabilities.map(x => number(100 * x, 2) + '%').join(', ')}; cost multiplier ${number(state.explore.scale, 2)}. Prices: ${esc(source)}.</p>${warnings.length ? `<p>Quote checks: ${esc(warnings.join(' '))}</p>` : ''}${fig(2, 'Compare deductibles')}<div class="wrap"><table><thead><tr><th>Deductible</th><th>Premium</th><th>E[out-of-pocket]</th><th>E[total]</th><th>CE cost</th><th>Standard cap</th></tr></thead><tbody>${rows}</tbody></table></div>${fig(3, 'Exposure to medical bills', $('exposure-caption').textContent)}${fig(4, 'Recommendation sensitivity')}<p>${mapLegend}</p><p>Wealth, quotes and cost amounts are held fixed. The other cost ranges keep their relative probability weights. The diagram uses a finite grid; γ above the displayed range is not evaluated.</p><p>Exploration answers: switch at γ ${Number.isFinite(state.tasks.flipGamma) ? gammaText(state.tasks.flipGamma) : 'not answered'}; risk premium ${Number.isFinite(state.tasks.riskPremium) ? money(state.tasks.riskPremium, 2) : 'not answered'} (model: ${money(c.result.best[0].riskPremium, 2)}).</p>${Object.entries(labels).map(([key, label]) => `<h2>${label}</h2><p class="reflection">${esc(state.reflections[key] || 'No reflection entered.')}</p>`).join('')}<h2>Model and sources</h2><p>C = premium + min(L,d) + min[0.1 max(L−d,0),700]. The model maximizes Σ p u(W−C) using CRRA, with log utility at γ = 1. CE cost = W − u⁻¹(E[u(W−C)]). The HRS questions and bins-and-balls format are adapted to a teaching exercise; this healthcare application has not been independently validated.</p><p>Medical use is held fixed. Liquidity constraints, payment timing, subsidies and nonstandard cost-sharing are omitted. Lower deductibles reduce standard out-of-pocket exposure; compare that benefit with the extra premium.</p><p><a href="https://websites.umich.edu/~shapiro/papers/jasa2008-online.pdf">HRS risk method</a> · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC2942770/">Bins-and-balls</a> · <a href="https://alexandria.unisg.ch/server/api/core/bitstreams/9a73dc00-1da2-40f0-8081-b20e60949db6/content">Swiss deductible model</a> · <a href="https://www.priminfo.admin.ch/de/faq">Official Swiss rules</a></p></body></html>`;
-      download('my-deductible-reflection.html', html, 'text/html');
+      const warnings = state.priceMode === 'personal' ? M.quoteWarnings(state.personalMonthly, state.offered) : [];
+      const rows = c.result.rows.map(x => `<tr><td>${money(x.deductible)}</td><td>${money(x.premium)}</td><td>${money(x.expectedOOP)}</td><td>${money(x.expectedCost)}</td><td>${money(x.ce)}</td><td>${money(x.maximumOOP)}</td></tr>`).join('');
+      const sw = c.sw ? `The result changes at a ${number(c.sw.probability * 100, 1)}% chance of costs of CHF 7,500 or more.` : 'The result does not change with the chance of costs of CHF 7,500 or more.';
+      const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My deductible decision</title><style>body{font:16px/1.6 system-ui;color:#203a33;max-width:1000px;margin:35px auto;padding:25px}h1{font-size:36px;font-weight:500}h2{margin-top:34px;font-size:23px}img{width:100%}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #d7dfd8;padding:9px;text-align:right}td:first-child,th:first-child{text-align:left}.reflection{white-space:pre-wrap}.small{font-size:13px;color:#64756e}button{padding:10px 18px;background:#195847;color:white;border:0;border-radius:6px}.wrap{overflow:auto}pre{white-space:pre-wrap}@media print{body{margin:0;padding:10px}button{display:none}img{break-inside:avoid}h2{break-after:avoid}}</style></head><body><button onclick="window.print()">Print / save as PDF</button>
+<h1>My deductible decision</h1><p class="small">Insurance Management · ${new Date().toISOString().slice(0, 10)}</p>
+<p><strong>Model recommendation:</strong> ${c.result.best.map(x => money(x.deductible)).join(' / ')}. <strong>Lowest average cost:</strong> ${c.result.cheapest.map(x => money(x.deductible)).join(' / ')}.</p>
+<p>Current deductible: ${d(state.current)}. Planned before the exercise: ${d(state.planned)}. Chosen after the exercise: ${d(state.after)}.</p>
+<p>Prediction: ${state.checks.prediction === 'none' ? 'none' : d(state.checks.prediction)}. Hand calculations correct: ${oopRight} of 2.</p>
+<h2>Risk aversion</h2><p>${r ? `Risk answers: ${state.hrs.join(', ')}; γ ${rangeText(r)}; suggested value ${gammaText(r.gamma)}.` : 'Risk questions not answered; the model started at γ = 0.5.'} Used: γ = ${gammaText(c.gamma)}, budget W = ${money(c.wealth)}.</p>${img(0, 'Utility curve')}<p>${esc(figures[0].caption)}</p>
+${state.legacyRisk ? `<details><summary>Answers from the earlier version</summary><pre>${esc(JSON.stringify(state.legacyRisk, null, 2))}</pre></details>` : ''}
+<h2>Healthcare costs</h2><p>Chances: ${RANGES.map((x, i) => `${x}: ${number(state.probs[i])}%`).join('; ')}. Typical amount for CHF 7,500 or more: ${money(state.topCost)}.${state.explore.high !== null || state.explore.scale !== 1 ? ` Used in the result: chance of CHF 7,500 or more ${number(c.binProbabilities[3] * 100, 1)}%, costs × ${number(state.explore.scale, 2)}.` : ''}</p>${img(1, 'Cost chances')}
+<h2>Premiums</h2><p>${state.priceMode === 'example' ? 'Example premiums (2026, largest legal discounts).' : `My quotes for ${state.quoteYear}.`}${warnings.length ? ' Checks: ' + esc(warnings.join(' ')) : ''}</p>
+<h2>Result</h2>${img(2, 'Average cost and CE cost')}<div class="wrap"><table><thead><tr><th>Deductible</th><th>Premium</th><th>Average out-of-pocket</th><th>Average total</th><th>CE cost</th><th>Most out-of-pocket</th></tr></thead><tbody>${rows}</tbody></table></div>${img(3, 'Most you could pay')}<p>Risk premium task: ${Number.isFinite(state.tasks.riskPremium) ? money(state.tasks.riskPremium, 2) : 'not answered'} (model: ${money(c.result.best[0].riskPremium, 2)}).</p>
+<h2>What would change it</h2>${img(4, 'Recommendation map')}<p>${M.DEDUCTIBLES.map((f, i) => `<span style="color:${COLORS[i]}">■</span> ${money(f)}`).join(' &nbsp; ')}</p><p>Budget W: ${esc(c.wealthLine)} ${esc(sw)}</p><p>γ task: ${Number.isFinite(state.tasks.flipGamma) ? gammaText(state.tasks.flipGamma) : 'not answered'}.</p>
+${Object.entries(REFLECTIONS).map(([key, label]) => `<h2>${label}</h2><p class="reflection">${esc(state.reflections[key] || 'No answer.')}</p>`).join('')}
+<h2>Model</h2><p class="small">Cost = premium + min(L, d) + min(10% × (L − d), CHF 700). The model picks the deductible with the highest expected CRRA utility of W minus this cost; CE cost = W − u⁻¹(expected utility). Risk questions: Barsky et al. (1997), Kimball et al. (2008). Standard adult cost-sharing only; care use is the same for every deductible.</p>
+<p class="small">For a next-year reduction of deductible, notify the insurer by 30 November; raising it has a later deadline.</p></body></html>`;
+      download('my-deductible-decision.html', html, 'text/html');
       $('export-status').textContent = 'Report downloaded. Open it to print or save as PDF.';
-    } catch (error) { $('export-status').textContent = 'Report could not be generated: ' + error.message; }
-    finally { updateReflection(); }
+    } catch (error) { $('export-status').textContent = 'Report could not be created: ' + error.message; }
+    finally { renderDecision(); }
   }
 
+  // ---------- Events ----------
   for (const id of ['current-deductible', 'planned-deductible', 'after-deductible', 'prediction']) {
     for (const f of M.DEDUCTIBLES) { const option = document.createElement('option'); option.value = f; option.textContent = money(f); $(id).append(option); }
   }
   const noPrediction = document.createElement('option'); noPrediction.value = 'none'; noPrediction.textContent = 'No prediction'; $('prediction').append(noPrediction);
-  document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => navigate(Number(b.dataset.go))));
-  document.querySelector('.brand').addEventListener('click', event => { event.preventDefault(); navigate(0); });
+  document.addEventListener('click', event => { const b = event.target.closest('[data-go]'); if (b) navigate(Number(b.dataset.go)); });
   document.querySelectorAll('[data-step]').forEach(b => b.addEventListener('click', () => navigate(Number(b.dataset.step))));
-  $('current-deductible').addEventListener('change', e => { state.current = e.target.value; updateResults(); });
-  $('planned-deductible').addEventListener('change', e => { state.planned = e.target.value; updateReflection(); });
+  document.querySelector('.brand').addEventListener('click', event => { event.preventDefault(); navigate(0); });
+  $('current-deductible').addEventListener('change', e => { state.current = e.target.value; refresh(); });
+  $('planned-deductible').addEventListener('change', e => { state.planned = e.target.value; });
   $('after-deductible').addEventListener('change', e => { state.after = e.target.value; });
-  function changeIncome(change) {
-    change(); state.explore.gamma = initialGamma();
-    renderRisk(); updateResults();
-  }
-  $('restart-risk').addEventListener('click', () => changeIncome(() => { state.hrsStarted = true; state.hrs = []; }));
-  $('undo-risk').addEventListener('click', () => changeIncome(() => { state.hrs.pop(); }));
+
+  function changeRisk(change) { change(); state.explore.gamma = initialGamma(); renderRisk(); refresh(); }
+  $('restart-risk').addEventListener('click', () => changeRisk(() => { state.hrsStarted = true; state.hrs = []; }));
+  $('undo-risk').addEventListener('click', () => changeRisk(() => { state.hrs.pop(); }));
   $('risk-quiz').addEventListener('click', event => {
     const b = event.target.closest('[data-risk-choice]');
-    if (!b || M.hrsQuestion(state.hrs) === null) return;
-    changeIncome(() => { state.hrs.push(b.dataset.riskChoice); });
+    if (b && M.hrsQuestion(state.hrs) !== null) changeRisk(() => { state.hrs.push(b.dataset.riskChoice); });
   });
-  $('use-elicited').addEventListener('click', () => { state.explore.gamma = initialGamma(); updateResults(); });
-  for (const id of ['risk-gamma', 'risk-gamma-preview']) $(id).addEventListener('input', e => { state.explore.gamma = Number(e.target.value); updateResults(); });
-  for (const id of ['wealth', 'wealth-preview']) $(id).addEventListener('input', e => { state.wealth = e.target.value === '' ? null : Number(e.target.value); if (id === 'wealth-preview' && state.wealth > 0) state.wealthBaseline = state.wealth; updateResults(); });
-  $('best-guess').addEventListener('input', e => { const v = e.target.value === '' ? null : Number(e.target.value); state.bestGuess = Number.isFinite(v) && v >= 0 ? v : null; $('belief-summary').textContent = beliefSummary(); if (state.page === 2) drawDistribution().catch(e => message(e.message)); persist(); });
-  $('own-beliefs').addEventListener('click', () => { state.counts = [0, 0, 0, 0]; state.beliefSource = 'personal'; state.explore.high = null; renderBeliefs(); updateResults(); });
-  $('example-beliefs').addEventListener('click', () => { state.counts = [4, 6, 6, 4]; state.costs = [...DEFAULT_COSTS]; state.beliefSource = 'example'; state.explore.high = null; renderBeliefs(); updateResults(); });
-  $('bins').addEventListener('click', event => {
-    const b = event.target.closest('[data-token]'); if (!b) return;
-    const i = Number(b.dataset.token); const delta = Number(b.dataset.change);
-    const total = state.counts.reduce((s, n) => s + n, 0);
-    if (delta > 0 && total >= 20 || delta < 0 && state.counts[i] <= 0) return;
-    state.counts[i] += delta; state.beliefSource = 'personal'; state.explore.high = null;
-    renderBeliefs(); updateResults();
-    const replacement = $('bins').querySelector(`[data-token="${i}"][data-change="${delta}"]`); if (replacement && !replacement.disabled) replacement.focus();
+  $('use-elicited').addEventListener('click', () => { state.explore.gamma = initialGamma(); refresh(); });
+  for (const id of ['gamma-input', 'gamma-explore']) $(id).addEventListener('input', e => { state.explore.gamma = Number(e.target.value); refresh(); });
+  for (const id of ['wealth-input', 'wealth-explore']) $(id).addEventListener('input', e => { state.wealth = e.target.value === '' ? null : Number(e.target.value); refresh(); });
+
+  $('prob-grid').addEventListener('input', event => {
+    const t = event.target;
+    if (t.dataset.prob !== undefined) state.probs[Number(t.dataset.prob)] = t.value === '' ? NaN : Number(t.value);
+    else if (t.id === 'top-cost') state.topCost = t.value === '' ? NaN : Number(t.value);
+    else return;
+    state.beliefSource = 'personal'; state.explore.high = null;
+    renderCostTotal(); refresh();
   });
-  $('bins').addEventListener('input', event => {
-    if (event.target.dataset.cost === undefined) return;
-    const i = Number(event.target.dataset.cost);
-    state.costs[i] = event.target.value === '' ? NaN : Number(event.target.value); state.beliefSource = 'personal';
-    validateCostField(i);
-    $('belief-source').textContent = 'My allocation';
-    $('belief-summary').textContent = beliefSummary();
-    updateResults();
+  $('belief-source').addEventListener('click', event => {
+    if (event.target.id !== 'example-beliefs') return;
+    state.probs = [...EXAMPLE_PROBS]; state.topCost = 10000; state.beliefSource = 'example'; state.explore.high = null;
+    renderCosts(); refresh();
   });
-  $('within-bin').addEventListener('change', e => { state.withinBin = e.target.value; renderBeliefs(); updateResults(); });
-  $('belief-confidence').addEventListener('change', e => { state.beliefConfidence = e.target.value; });
-  $('record-beliefs').addEventListener('click', () => {
-    try { baselineProbabilities(); checkCosts(); state.initialBeliefs = { counts: [...state.counts], costs: [...state.costs], source: state.beliefSource, withinBin: state.withinBin }; message('Initial distribution saved.'); } catch (error) { message(error.message); }
-  });
-  $('price-mode').addEventListener('change', e => { state.priceMode = e.target.value; renderPrices(); updateResults(); });
-  $('quote-year').addEventListener('input', e => { const y = Number(e.target.value); if (Number.isInteger(y) && y >= 2020 && y <= 2100) { state.quoteYear = y; updateLabels(); } });
-  $('premium-inputs').addEventListener('input', event => { const i = event.target.dataset.premium; if (i === undefined) return; const value = event.target.value === '' ? null : Number(event.target.value); state.personalMonthly[Number(i)] = value; updateResults(); });
-  $('premium-inputs').addEventListener('change', event => { const i = event.target.dataset.offered; if (i === undefined) return; state.offered[Number(i)] = event.target.checked; renderPrices(); updateResults(); });
+
+  $('price-mode').addEventListener('change', e => { state.priceMode = e.target.value; renderPrices(); refresh(); });
+  $('quote-year').addEventListener('input', e => { const y = Number(e.target.value); if (Number.isInteger(y) && y >= 2020 && y <= 2100) { state.quoteYear = y; refresh(); } });
+  $('premium-inputs').addEventListener('input', event => { const i = event.target.dataset.premium; if (i === undefined) return; state.personalMonthly[Number(i)] = event.target.value === '' ? null : Number(event.target.value); renderPriceWarnings(); refresh(); });
+  $('premium-inputs').addEventListener('change', event => { const i = event.target.dataset.offered; if (i === undefined) return; state.offered[Number(i)] = event.target.checked; renderPrices(); refresh(); });
+
   $('check-oop').addEventListener('click', () => {
     $('oop-feedback').textContent = OOP_CHECKS.map(q => {
       const value = $(q.id).value === '' ? NaN : Number($(q.id).value);
       state.checks[q.key] = Number.isFinite(value) ? value : null;
       if (!Number.isFinite(value)) return `${q.label}: no answer.`;
-      return Math.abs(value - M.outOfPocket(q.loss, q.deductible)) < .5 ? `${q.label}: correct (${q.right})` : `${q.label}: not quite. ${q.hint}`;
+      return Math.abs(value - M.outOfPocket(q.loss, q.deductible)) < .5 ? `${q.label}: correct (${q.right}).` : `${q.label}: not quite. ${q.hint}`;
     }).join(' ');
     persist();
   });
@@ -1589,21 +1591,30 @@ return Plotly;
     const p = $('prediction').value;
     if (!p) { $('prediction-status').textContent = 'Choose an option first.'; return; }
     $('prediction-status').textContent = '';
-    state.checks.prediction = p; updateResults();
+    state.checks.prediction = p; refresh();
   });
-  document.querySelectorAll('[data-task]').forEach(b => b.addEventListener('click', () => checkTask(b.dataset.task)));
   document.querySelectorAll('[data-cost-view]').forEach(b => b.addEventListener('click', () => {
     costView = b.dataset.costView;
     document.querySelectorAll('[data-cost-view]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-    drawCharts().catch(error => message('Chart error: ' + error.message));
+    drawVisible();
   }));
-  $('high-prob').addEventListener('input', e => { state.explore.high = Number(e.target.value) / 100; updateResults(); });
-  $('cost-scale').addEventListener('input', e => { state.explore.scale = Number(e.target.value); updateResults(); });
-  $('restore-initial').addEventListener('click', () => { state.explore = { gamma: initialGamma(), high: null, scale: 1 }; state.wealth = state.wealthBaseline; if (state.initialBeliefs) { state.counts = [...state.initialBeliefs.counts]; state.costs = [...state.initialBeliefs.costs]; state.beliefSource = state.initialBeliefs.source; state.withinBin = state.initialBeliefs.withinBin; renderBeliefs(); } updateResults(); });
+  document.querySelectorAll('[data-task]').forEach(b => b.addEventListener('click', () => checkTask(b.dataset.task)));
+  $('high-prob').addEventListener('input', e => { state.explore.high = Number(e.target.value) / 100; refresh(); });
+  $('cost-scale').addEventListener('input', e => { state.explore.scale = Number(e.target.value); refresh(); });
+  $('restore-initial').addEventListener('click', () => { state.explore = { gamma: initialGamma(), high: null, scale: 1 }; refresh(); });
   for (const key of Object.keys(state.reflections)) $('reflection-' + key).addEventListener('input', e => { state.reflections[key] = e.target.value; persist(); });
+
   $('save-progress').addEventListener('click', saveProgress); $('save-final').addEventListener('click', saveProgress);
   $('load-progress').addEventListener('click', () => $('load-file').click());
-  $('load-file').addEventListener('change', async event => { const file = event.target.files[0]; if (!file) return; try { if (file.size > 250000) throw new Error('Progress file is too large.'); state = readState(JSON.parse(await file.text())); syncUI(); persist(); message(state.legacyRisk && !state.hrs.length ? 'Progress loaded. Earlier CARA answers are archived; complete the income choices for CRRA.' : 'Progress loaded.'); } catch (error) { message('Could not load progress: ' + error.message); } event.target.value = ''; });
+  $('load-file').addEventListener('change', async event => {
+    const file = event.target.files[0]; if (!file) return;
+    try {
+      if (file.size > 250000) throw new Error('Progress file is too large.');
+      state = readState(JSON.parse(await file.text())); syncUI(); persist();
+      message(state.legacyRisk && !state.hrs.length ? 'Progress loaded. Please answer the new risk questions.' : 'Progress loaded.');
+    } catch (error) { message('Could not load progress: ' + error.message); }
+    event.target.value = '';
+  });
   $('start-over').addEventListener('click', () => {
     if (!window.confirm('Clear all answers in this browser?')) return;
     clearTimeout(saveTimer);
@@ -1614,13 +1625,14 @@ return Plotly;
   $('open-methods').addEventListener('click', () => $('methods-dialog').showModal()); $('close-methods').addEventListener('click', () => $('methods-dialog').close());
   document.addEventListener('change', persist);
   let resizeTimer;
-  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (state.page === 3 && cached && plotted) drawCharts().catch(error => message(error.message)); if (state.page === 1) drawUtility().catch(e => message(e.message)); if (state.page === 2) drawDistribution().catch(e => message(e.message)); }, 180); });
+  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawVisible, 180); });
   window.addEventListener('beforeunload', event => { if (!storageWorks && hasWork()) { event.preventDefault(); event.returnValue = ''; } });
   window.DeductibleLab = { getState: () => JSON.parse(JSON.stringify(state)), getResults: () => cached ? JSON.parse(JSON.stringify(cached)) : null, model: M };
+
   let restored = false;
   try { const saved = localStorage.getItem(STORAGE_KEY); if (saved) { state = readState(JSON.parse(saved)); restored = true; } } catch (_) { state = defaultState(); }
   syncUI();
-  if (restored) message(state.legacyRisk && !state.hrs.length ? 'Your saved costs and reflections are restored. Complete the new income choices for CRRA.' : 'Answers restored.');
+  if (restored) message(state.legacyRisk && !state.hrs.length ? 'Your answers are restored. Please answer the new risk questions.' : 'Answers restored.');
 })();
 
 </script>
