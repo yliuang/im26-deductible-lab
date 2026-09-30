@@ -325,6 +325,7 @@ dialog{padding:22px}
         <h1 id="start-title">How high should your deductible be?</h1>
         <p class="lead">This is an exercise on choosing your health insurance deductible. You answer a few questions about risk and your expected healthcare costs, see which deductible a simple model would pick, and compare it with what you would choose yourself.</p>
         <p>The exercise is also an opportunity to reconsider your choice for next year. If you want to lower your deductible, your insurer must receive your notice by 30 November; raising it has a later deadline. Complete your comparison ahead of time, so we can discuss your reasoning in the tutorial on 30 November. See the <a href="https://www.priminfo.admin.ch/de/faq" target="_blank" rel="noopener">official notice rules</a> for details.</p>
+        <p>If you are not in Swiss basic insurance, for example because you are an EU/EFTA/UK student covered at home or have an approved exemption, do the exercise as if you had a Swiss policy, using the example premiums. See the <a href="https://www.bag.admin.ch/en/health-insurance-foreign-students-in-switzerland" target="_blank" rel="noopener">official rules for foreign students</a>.</p>
         <div class="starting-point"><h2>Your deductible</h2><div class="field-row"><label class="field">Current deductible<select id="current-deductible"><option value="">Prefer not to say / not applicable</option></select></label><label class="field">Planned for next year<select id="planned-deductible"><option value="">Not decided</option></select></label></div><p class="small muted">Optional. Your answers are saved in this browser only.</p></div>
         <div class="intro-actions"><button class="button primary large" data-go="1">Start →</button></div>
       </div>
@@ -1055,6 +1056,8 @@ return Plotly;
     { id: 'oop-2', key: 'oop2', loss: 12000, deductible: 500, label: 'Second bill', right: '500 + 700, because 10% × 11,500 is more than the cap', hint: 'Remember the CHF 700 cap.' }
   ];
   const REFLECTIONS = { choice: 'Would you follow the recommendation?', uncertainty: 'Least certain input', omitted: 'What the model leaves out' };
+  // "Current deductible" value for students outside Swiss basic insurance (home insurance or exemption).
+  const NOT_INSURED = 'none';
   // `gamma` and `wealth` are the student's answers. `explore` holds the What if changes; null means "as in my answers".
   const noChanges = () => ({ gamma: null, wealth: null, high: null, scale: 1 });
   const defaultState = () => ({ version: 6, page: 0, current: '', planned: '', after: '', hrsStarted: false, hrs: [], legacyRisk: null, gamma: .5, wealth: 10000, probs: [...EXAMPLE_PROBS], beliefSource: 'example', priceMode: 'example', quoteYear: 2027, personalMonthly: [null, null, null, null, null, null], offered: [true, true, true, true, true, true], explore: noChanges(), checks: { oop1: null, oop2: null, prediction: '', predictedWith: '' }, tasks: { flipGamma: null, riskPremium: null }, reflections: { choice: '', uncertainty: '', omitted: '' } });
@@ -1339,7 +1342,7 @@ return Plotly;
 
   function renderDecision() {
     const pick = cached && revealed() ? picks(cached.result) : null;
-    $('decision-summary').textContent = (pick ? `The model recommends ${pick}.` : 'See the result first.') + (state.current ? ` Your current deductible is ${money(Number(state.current))}.` : '');
+    $('decision-summary').textContent = (pick ? `The model recommends ${pick}.` : 'See the result first.') + (state.current === NOT_INSURED ? ' You are not in Swiss basic insurance at the moment.' : state.current ? ` Your current deductible is ${money(Number(state.current))}.` : '');
     const ready = Boolean(cached) && revealed();
     $('export-report').disabled = !ready;
     if (!ready && !$('export-status').textContent.startsWith('Report')) $('export-status').textContent = 'The report is available once you have seen the result.';
@@ -1451,7 +1454,7 @@ return Plotly;
     const next = defaultState();
     const validD = x => x === '' || M.DEDUCTIBLES.includes(Number(x));
     const finiteIn = (x, lo, hi) => Number.isFinite(x) && x >= lo && x <= hi ? x : null;
-    if (!validD(raw.current ?? '') || !validD(raw.planned ?? '') || !validD(raw.after ?? '')) throw new Error('Invalid deductible in progress file.');
+    if (!(validD(raw.current ?? '') || raw.current === NOT_INSURED) || !validD(raw.planned ?? '') || !validD(raw.after ?? '')) throw new Error('Invalid deductible in progress file.');
     next.current = raw.current ? String(raw.current) : ''; next.planned = raw.planned ? String(raw.planned) : ''; next.after = raw.after ? String(raw.after) : '';
     if (raw.version >= 4) {
       if (!Array.isArray(raw.hrs) || raw.hrs.length > 3) throw new Error('Invalid risk answers.');
@@ -1522,7 +1525,7 @@ return Plotly;
       const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My deductible decision</title><style>body{font:16px/1.6 system-ui;color:#203a33;max-width:1000px;margin:35px auto;padding:25px}h1{font-size:36px;font-weight:500}h2{margin-top:34px;font-size:23px}img{width:100%}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #d7dfd8;padding:9px;text-align:right}td:first-child,th:first-child{text-align:left}.reflection{white-space:pre-wrap}.small{font-size:13px;color:#64756e}button{padding:10px 18px;background:#195847;color:white;border:0;border-radius:6px}.wrap{overflow:auto}pre{white-space:pre-wrap}@media print{body{margin:0;padding:10px}button{display:none}img{break-inside:avoid}h2{break-after:avoid}}</style></head><body><button onclick="window.print()">Print / save as PDF</button>
 <h1>My deductible decision</h1><p class="small">Insurance Management · ${new Date().toISOString().slice(0, 10)}</p>
 <p><strong>Model recommendation with my answers:</strong> ${picks(c.result)}. <strong>Lowest average cost:</strong> ${c.result.cheapest.map(x => money(x.deductible)).join(' / ')}.</p>
-<p>Current deductible: ${d(state.current)}. Planned before the exercise: ${d(state.planned)}. Chosen after the exercise: ${d(state.after)}.</p>
+<p>Current deductible: ${state.current === NOT_INSURED ? 'not in Swiss basic insurance' : d(state.current)}. Planned before the exercise: ${d(state.planned)}. Chosen after the exercise: ${d(state.after)}.</p>
 <p>Prediction: ${state.checks.prediction === 'none' ? 'none' : d(state.checks.prediction)}. Hand calculations correct: ${oopRight} of 2.</p>
 <h2>Risk aversion</h2><p>${r ? `Risk answers: ${state.hrs.join(', ')}; γ ${rangeText(r)}; suggested value ${gammaText(r.gamma)}.` : 'Risk questions not answered; the model started at γ = 0.5.'} Used: γ = ${gammaText(c.gamma)}, W = ${money(c.wealth)}.</p>${img(0, 'Utility curve')}<p>${esc(figures[0].caption)}</p>
 ${state.legacyRisk ? `<details><summary>Answers from the earlier version</summary><pre>${esc(JSON.stringify(state.legacyRisk, null, 2))}</pre></details>` : ''}
@@ -1544,6 +1547,7 @@ ${Object.entries(REFLECTIONS).map(([key, label]) => `<h2>${label}</h2><p class="
     for (const f of M.DEDUCTIBLES) { const option = document.createElement('option'); option.value = f; option.textContent = money(f); $(id).append(option); }
   }
   const noPrediction = document.createElement('option'); noPrediction.value = 'none'; noPrediction.textContent = 'No prediction'; $('prediction').append(noPrediction);
+  const notInsured = document.createElement('option'); notInsured.value = NOT_INSURED; notInsured.textContent = 'Not insured in Switzerland (home insurance / exempt)'; $('current-deductible').append(notInsured);
   document.addEventListener('click', event => { const b = event.target.closest('[data-go]'); if (b) navigate(Number(b.dataset.go)); });
   document.querySelectorAll('[data-step]').forEach(b => b.addEventListener('click', () => navigate(Number(b.dataset.step))));
   document.querySelector('.brand').addEventListener('click', event => { event.preventDefault(); navigate(0); });
