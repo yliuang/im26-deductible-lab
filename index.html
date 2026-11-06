@@ -337,8 +337,8 @@ dialog{padding:22px}
         <div class="question-box" id="risk-quiz"></div>
         <div id="risk-feedback" class="feedback" hidden></div>
         <div class="section-actions"><button class="button" id="restart-risk">Start the questions</button><button class="button quiet" id="undo-risk" hidden>Undo last answer</button></div>
-        <p class="small muted source-note"><strong>How the answers measure risk aversion.</strong> There are no right or wrong answers. Each question compares the expected utility of Job B, ½·u(2<i>y</i>) + ½·u((1−<i>c</i>)·<i>y</i>) with a cut <i>c</i>, with the utility of Job A, u(<i>y</i>). With the CRRA utility on the next page, the income <i>y</i> cancels out, so each answer gives a lower or an upper bound on γ. For example, if a 50% cut leaves you indifferent, γ = 1 (log utility), because ½·ln 2 + ½·ln ½ = 0.</p>
-        <p class="small muted">Questions from the US Health and Retirement Study (Barsky et al., 1997), which economists use to measure risk aversion.</p>
+        <p class="small muted source-note"><strong>How the answers measure risk aversion.</strong> Each question compares the expected utility of Job B, ½·u(2<i>y</i>) + ½·u((1−<i>c</i>)·<i>y</i>) with a cut <i>c</i>, with the utility of Job A, u(<i>y</i>). With CRRA utility, u(<i>y</i>) = <i>y</i><sup>1−γ</sup> / (1−γ), the income <i>y</i> cancels out, so each answer gives a lower or an upper bound on γ.</p>
+        <p class="small muted">Questions from the US Health and Retirement Study (Barsky et al., 1997; Kimball, Sahm and Shapiro, 2008).</p>
       </div>
       <div class="page-bottom"><button class="button quiet" data-go="0">← Start</button><button class="button primary" data-go="2">Your risk aversion →</button></div>
     </section>
@@ -1176,7 +1176,7 @@ return Plotly;
     const low = .8 * W; const high = 1.2 * W; const eu = (u(low) + u(high)) / 2; const q = 1 - g;
     const ce = W * (Math.abs(q) < 1e-10 ? Math.exp(eu) : Math.exp(Math.log1p(q * eu) / q));
     const xs = Array.from({ length: 121 }, (_, i) => W * (.7 + .6 * i / 120));
-    const caption = g === 0 ? `With γ = 0, a 50–50 chance of ${money(low)} or ${money(high)} is worth exactly its average, ${money(W)}.` : `With γ = ${gammaText(g)}, a 50–50 chance of ${money(low)} or ${money(high)} is worth as much as ${money(ce)} for sure.`;
+    const caption = g === 0 ? `With γ = 0, a 50–50 chance of ${money(low)} or ${money(high)} is worth exactly its expected value, ${money(W)}.` : `With γ = ${gammaText(g)}, a 50–50 chance of ${money(low)} or ${money(high)} is worth as much as ${money(ce)} for sure.`;
     return {
       caption,
       data: [
@@ -1257,7 +1257,7 @@ return Plotly;
       $('risk-quiz').innerHTML = `<div class="question-progress">Question ${history.length + 1} of 2 or 3</div><h2>Which job would you take?</h2><div class="choice-options"><button class="choice-option" data-risk-choice="certain"><span class="option-label">Job A</span><strong class="income-outcome">Fixed income</strong><small>Your income stays the same.</small></button><button class="choice-option" data-risk-choice="risky"><span class="option-label">Job B</span><strong class="income-outcome">Double, or ${share} less</strong><small>50% chance of each.</small></button></div>`;
     }
     $('risk-feedback').hidden = !result;
-    if (result) $('risk-feedback').innerHTML = `<h2>Done</h2><p>Your answers put your risk aversion γ ${rangeText(result)}. The higher γ, the more you would give up to avoid risk. γ = 0 means you care only about the average.</p>`;
+    if (result) $('risk-feedback').innerHTML = `<h2>Done</h2><p>Your answers put your risk aversion γ ${rangeText(result)}. The higher γ, the more you would give up to avoid risk. γ = 0 means risk neutrality: only the expected value matters.</p>`;
   }
 
   function renderGamma() {
