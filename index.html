@@ -1181,7 +1181,7 @@ return Plotly;
       caption,
       data: [
         { type: 'scatter', mode: 'lines', name: 'Utility', x: xs, y: xs.map(u), line: { color: '#195847', width: 3 }, hovertemplate: 'CHF %{x:,.0f}<extra></extra>' },
-        { type: 'scatter', mode: 'lines+markers', name: '50–50 chance', x: [low, high], y: [u(low), u(high)], line: { color: '#8ba097', dash: 'dash' }, marker: { size: 9 }, hovertemplate: 'CHF %{x:,.0f}<extra></extra>' },
+        { type: 'scatter', mode: 'lines+markers', name: '50–50 chance', showlegend: false, x: [low, high], y: [u(low), u(high)], line: { color: '#8ba097', dash: 'dash' }, marker: { size: 9 }, hovertemplate: 'CHF %{x:,.0f}<extra></extra>' },
         { type: 'scatter', mode: 'markers', name: 'Expected utility of the 50–50 chance', x: [W], y: [eu], marker: { size: 11, color: '#fff', line: { color: '#64756e', width: 2 } }, hovertemplate: 'Expected value CHF %{x:,.0f}<extra></extra>' },
         { type: 'scatter', mode: 'markers', name: 'Certainty equivalent', x: [ce], y: [eu], marker: { size: 13, color: '#c9853b', symbol: 'diamond' }, hovertemplate: 'Certainty equivalent CHF %{x:,.0f}<extra></extra>' }
       ],
