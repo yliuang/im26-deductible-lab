@@ -299,6 +299,7 @@ dialog{padding:22px}
 .result-summary{grid-template-columns:1fr 1fr}
 #results-validation .text-button{margin-left:6px}
 @media(max-width:800px){.costs-layout{grid-template-columns:1fr;gap:10px}}
+.wealth-note{color:var(--error);margin:8px 0 18px}
 
 </style>
 </head>
@@ -350,8 +351,9 @@ dialog{padding:22px}
           <label class="slider-field" for="gamma-input"><span>Risk aversion γ</span><strong id="gamma-value"></strong><input id="gamma-input" type="range" min="0" max="20" step="0.05"><small>0 = risk neutral · 0.5 = square root · 1 = log</small></label>
           <p class="small muted">Utility: u(w) = w<sup>1−γ</sup> / (1−γ). With γ = 0.5 this is 2√w, which ranks every choice the same way as √w.</p>
           <button class="button" id="use-elicited">Use my suggested value</button>
-          <label class="field">Money you can draw on, W (CHF)<input type="number" id="wealth-input" min="1" max="10000000" step="1000"></label>
-          <p class="small muted">Savings and income you could use to pay premiums and medical bills. The default is CHF 10,000; you can change it.</p>
+          <label class="field">Money you can draw on next year, W (CHF)<input type="number" id="wealth-input" min="1" max="10000000" step="1000"></label>
+          <p class="small muted">A year's income or family support for premiums and medical bills, plus savings. The default is CHF 10,000; you can change it.</p>
+          <p id="wealth-note" class="small wealth-note" role="status" hidden></p>
         </div>
         <div><div id="utility-chart" class="chart" role="img" aria-label="Utility curve with a 50–50 gamble and its certainty equivalent"></div><p id="utility-caption" class="chart-caption" aria-live="polite"></p></div>
       </div>
@@ -394,6 +396,7 @@ dialog{padding:22px}
       <div id="results-body" hidden>
         <div class="result-summary" aria-live="polite"><div><p>The model recommends</p><strong id="recommended-value"></strong><span id="recommended-context"></span></div><div><p>Lowest expected cost</p><strong id="neutral-value"></strong><span id="neutral-context"></span></div></div>
         <p id="prediction-note" class="small muted"></p>
+        <p id="excluded-note" class="small wealth-note" hidden></p>
         <div class="chart-title"><h2>What does each deductible cost?</h2></div>
         <div class="view-toggle" role="group" aria-label="Chart view"><button class="button quiet" data-cost-view="average" aria-pressed="true">Expected cost</button><button class="button quiet" data-cost-view="gap" aria-pressed="false">Difference from the best</button><button class="button quiet" data-cost-view="max" aria-pressed="false">Most you could pay</button></div>
         <p id="cost-chart-caption" class="chart-caption"></p>
@@ -948,14 +951,21 @@ return Plotly;
     return { low, high, complete, gamma: complete ? (Number.isFinite(high) ? (low + high) / 2 : 10) : .5, openUpper: high === Infinity };
   }
 
+  // Worst case of each offered deductible in one year: premium + deductible + CHF 700 cap.
+  // CRRA needs W above it, so deductibles whose worst case W cannot cover are left out.
+  function worstCases(premiums, offered = DEDUCTIBLES.map(() => true)) {
+    return DEDUCTIBLES.map((d, i) => offered[i] && Number.isFinite(premiums[i]) ? { deductible: d, worst: premiums[i] + d + 700 } : null).filter(Boolean);
+  }
+
   function compareCRRA(costs, probabilities, premiums, gamma, wealth, offered = DEDUCTIBLES.map(() => true)) {
     const ps = distribution(costs, probabilities);
+    const excluded = [];
     const rows = DEDUCTIBLES.map((d, i) => {
       if (!offered[i]) return null;
       const premium = premiums[i];
       if (!Number.isFinite(premium) || premium < 0) throw new Error('Enter an annual premium for every available deductible.');
       // Use the standard annual cap so an omitted tail cannot hide insolvency.
-      if (!(wealth > premium + d + 700)) throw new Error(`W must be above CHF ${Math.ceil(premium + d + 700).toLocaleString('en-GB')}: the premium plus maximum cost-sharing of the CHF ${d.toLocaleString('en-GB')} deductible. The model cannot evaluate a year that would use up all of W.`);
+      if (!(wealth > premium + d + 700)) { excluded.push({ deductible: d, worst: premium + d + 700 }); return null; }
       const oop = costs.map(c => outOfPocket(c, d));
       const total = oop.map(c => premium + c);
       const expectedOOP = oop.reduce((s, c, j) => s + c * ps[j], 0);
@@ -964,9 +974,15 @@ return Plotly;
       const variance = total.reduce((s, c, j) => s + ps[j] * (c - expectedCost) ** 2, 0);
       return { deductible: d, premium, expectedOOP, expectedCost, ce, riskPremium: ce - expectedCost, sd: Math.sqrt(variance), maximumOOP: d + 700, supportedWorstCost: Math.max(...total.filter((_, j) => ps[j] > 0)) };
     }).filter(Boolean);
+    if (!rows.length && excluded.length) {
+      const low = excluded.reduce((a, b) => b.worst < a.worst ? b : a);
+      const chf = x => 'CHF ' + Math.ceil(x).toLocaleString('en-GB');
+      const error = new Error(`W must be above ${chf(low.worst)} for the model. With less, you could not cover the worst case of any deductible (premium plus deductible plus the CHF 700 cap). The CHF ${low.deductible.toLocaleString('en-GB')} deductible keeps your worst case smallest; also check whether you qualify for a premium subsidy (individuelle Prämienverbilligung).`);
+      error.code = 'unaffordable'; error.minimumWealth = low.worst; throw error;
+    }
     if (!rows.length) throw new Error('Select at least one available deductible.');
     const min = Math.min(...rows.map(r => r.ce)); const meanMin = Math.min(...rows.map(r => r.expectedCost));
-    return { rows, best: rows.filter(r => r.ce - min <= .005), cheapest: rows.filter(r => r.expectedCost - meanMin <= .005), sorted: [...rows].sort((a, b) => a.ce - b.ce), expectedLoss: costs.reduce((s, c, j) => s + ps[j] * c, 0) };
+    return { rows, excluded, best: rows.filter(r => r.ce - min <= .005), cheapest: rows.filter(r => r.expectedCost - meanMin <= .005), sorted: [...rows].sort((a, b) => a.ce - b.ce), expectedLoss: costs.reduce((s, c, j) => s + ps[j] * c, 0) };
   }
 
   function gammaRegions(costs, probabilities, premiums, offered, wealth, low = 0, high = 20, steps = 80) {
@@ -984,9 +1000,9 @@ return Plotly;
 
   // Splits a log-spaced wealth range into regions with the same recommendation,
   // holding γ and costs fixed. The lower end is the smallest W that keeps
-  // remaining wealth positive under every offered option.
+  // remaining wealth positive under every offered option (below it, options drop out; see compareCRRA).
   function wealthRegions(costs, probabilities, premiums, offered, gamma, high = 1e6, steps = 120) {
-    const low = Math.max(...DEDUCTIBLES.map((d, i) => offered[i] ? premiums[i] + d + 700 : 0)) + 1;
+    const low = Math.max(...worstCases(premiums, offered).map(x => x.worst)) + 1;
     const best = w => compareCRRA(costs, probabilities, premiums, gamma, w, offered).best[0].deductible;
     const at = i => low * (high / low) ** (i / steps);
     const regions = []; let from = low; let previous = best(low);
@@ -1024,7 +1040,7 @@ return Plotly;
     return { xs, ys, z };
   }
 
-  const api = { DEDUCTIBLES, EXAMPLE_PREMIUMS, ANCHOR, BINS, LOSS_OFFERS, distribution, outOfPocket, certaintyEquivalent, fitCARA, anchorFee, gainEquivalent, fitGainCARA, feeFromGain, psmResult, lossOffer, lossResult, compare, reweightHigh, nearestSwitch, feeRegions, heatmap, binScenarios, quoteWarnings, crraUtility, crraCE, HRS_CUTS, HRS_THRESHOLDS, hrsQuestion, hrsResult, compareCRRA, gammaRegions, wealthRegions, probabilitySwitchCRRA, heatmapCRRA };
+  const api = { worstCases, DEDUCTIBLES, EXAMPLE_PREMIUMS, ANCHOR, BINS, LOSS_OFFERS, distribution, outOfPocket, certaintyEquivalent, fitCARA, anchorFee, gainEquivalent, fitGainCARA, feeFromGain, psmResult, lossOffer, lossResult, compare, reweightHigh, nearestSwitch, feeRegions, heatmap, binScenarios, quoteWarnings, crraUtility, crraCE, HRS_CUTS, HRS_THRESHOLDS, hrsQuestion, hrsResult, compareCRRA, gammaRegions, wealthRegions, probabilitySwitchCRRA, heatmapCRRA };
   root.DeductibleModel = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window === 'undefined' ? globalThis : window);
@@ -1112,6 +1128,7 @@ return Plotly;
     const total = probs.reduce((a, b) => a + b, 0);
     if (Math.abs(total - 100) > 1e-9) throw issue(`Your cost chances add up to ${number(total)}%, not 100%.`, 3);
     if (!(Number.isFinite(state.wealth) && state.wealth > 0)) throw issue('Enter W above zero.', 2);
+    if (state.wealth > 10000000) throw issue('Enter W up to CHF 10,000,000.', 2);
     const personal = state.priceMode === 'personal';
     const premiums = personal ? state.personalMonthly.map(p => Number.isFinite(p) ? p * 12 : NaN) : [...M.EXAMPLE_PREMIUMS];
     const offered = personal ? [...state.offered] : M.DEDUCTIBLES.map(() => true);
@@ -1128,6 +1145,24 @@ return Plotly;
   }
   const changed = () => { const e = state.explore; return e.gamma !== null || e.wealth !== null || e.high !== null || e.scale !== 1; };
   const quotesLookWrong = () => state.priceMode === 'personal' && M.quoteWarnings(state.personalMonthly, state.offered).length > 0;
+  const andList = xs => xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs.at(-1);
+  // Deductibles whose worst case (premium + deductible + CHF 700) W cannot cover drop out of the comparison.
+  const leftOutText = (excluded, W) => excluded?.length ? `With W = ${money(W)} you could not cover the worst case of the ${andList(excluded.map(x => money(x.deductible)))} deductible${excluded.length > 1 ? 's' : ''} (premium plus deductible plus CHF 700), so the model leaves ${excluded.length > 1 ? 'them' : 'it'} out.` : '';
+  function priceSettings() {
+    const personal = state.priceMode === 'personal';
+    return { premiums: personal ? state.personalMonthly.map(p => Number.isFinite(p) ? p * 12 : NaN) : [...M.EXAMPLE_PREMIUMS], offered: personal ? [...state.offered] : M.DEDUCTIBLES.map(() => true) };
+  }
+  // Shown under W on the Risk aversion page as soon as W is too small for some or all deductibles.
+  function wealthNote(W) {
+    const { premiums, offered } = priceSettings();
+    const cases = M.worstCases(premiums, offered);
+    if (!cases.length || !(W > 0)) return '';
+    const min = Math.min(...cases.map(x => x.worst)); const max = Math.max(...cases.map(x => x.worst));
+    const ceil = x => money(Math.ceil(x));
+    if (W <= min) return `With these premiums, W must be above ${ceil(min)} for the model to work: with less you could not cover the worst case of any deductible.`;
+    if (W <= max) return leftOutText(cases.filter(x => W <= x.worst), W) + ` Above ${ceil(max)} all ${cases.length} deductibles are compared.`;
+    return '';
+  }
 
   function wealthText(regions) {
     const round = x => money(Math.round(x / 100) * 100);
@@ -1173,9 +1208,9 @@ return Plotly;
   function utilityFigure() {
     const W = state.wealth; const g = state.gamma;
     const u = x => M.crraUtility(x / W, g);
-    const low = .8 * W; const high = 1.2 * W; const eu = (u(low) + u(high)) / 2; const q = 1 - g;
+    const stake = Math.min(2000, W / 2); const low = W - stake; const high = W + stake; const eu = (u(low) + u(high)) / 2; const q = 1 - g;
     const ce = W * (Math.abs(q) < 1e-10 ? Math.exp(eu) : Math.exp(Math.log1p(q * eu) / q));
-    const xs = Array.from({ length: 121 }, (_, i) => W * (.7 + .6 * i / 120));
+    const xs = Array.from({ length: 121 }, (_, i) => W - 1.5 * stake + 3 * stake * i / 120);
     const caption = g === 0 ? `With γ = 0, a 50–50 chance of ${money(low)} or ${money(high)} is worth exactly its expected value, ${money(W)}.` : `With γ = ${gammaText(g)}, a 50–50 chance of ${money(low)} or ${money(high)} is worth as much as ${money(ce)} for sure. Its expected value is ${money(W)}; the gap of ${money(W - ce)} is the risk premium.`;
     return {
       caption,
@@ -1267,6 +1302,7 @@ return Plotly;
     $('gamma-input').value = g;
     $('gamma-value').textContent = gammaText(g);
     if (document.activeElement !== $('wealth-input')) $('wealth-input').value = state.wealth ?? '';
+    const note = wealthNote(state.wealth); $('wealth-note').textContent = note; $('wealth-note').hidden = !note;
     $('use-elicited').disabled = Math.abs(initialGamma() - g) < 1e-9;
     $('use-elicited').textContent = r ? 'Use my suggested value' : 'Back to γ = 0.5';
   }
@@ -1314,6 +1350,7 @@ return Plotly;
     $('recommended-context').textContent = r.best.length > 1 ? 'A tie.' : cached.band || 'Lowest CE cost.';
     $('neutral-value').textContent = r.cheapest.map(x => money(x.deductible)).join(' / ');
     $('neutral-context').textContent = `${money(r.cheapest[0].expectedCost)} a year in expectation.`;
+    const left = (quotesLookWrong() && r.excluded.length ? 'Your premium quotes look unusual. ' : '') + leftOutText(r.excluded, cached.wealth); $('excluded-note').textContent = left; $('excluded-note').hidden = !left;
     $('prediction-note').textContent = state.checks.prediction && state.checks.prediction !== 'none' ? `You predicted ${money(Number(state.checks.prediction))}.` : '';
     $('results-table').innerHTML = r.rows.map(x => `<tr class="${r.best.some(b => b.deductible === x.deductible) ? 'recommended' : ''}"><td>${money(x.deductible)}${Number(state.current) === x.deductible ? ' · current' : ''}</td><td>${money(x.premium)}</td><td>${money(x.expectedOOP)}</td><td>${money(x.expectedCost)}</td><td>${money(x.ce)}</td><td>${money(x.maximumOOP)}</td></tr>`).join('');
   }
@@ -1335,7 +1372,7 @@ return Plotly;
     $('restore-initial').disabled = !changed();
     $('whatif-gate').hidden = revealed();
     $('whatif-body').hidden = !revealed();
-    $('whatif-pick').textContent = whatIf ? picks(whatIf.result) : (whatIfProblem || problem)?.text ?? '';
+    $('whatif-pick').textContent = whatIf ? picks(whatIf.result) + (whatIf.result.excluded.length ? '. ' + leftOutText(whatIf.result.excluded, whatIf.wealth) : '') : (whatIfProblem || problem)?.text ?? '';
     if (!whatIf) { $('switch-list').innerHTML = ''; return; }
     const sw = whatIf.sw;
     const chance = `Chance of ${HIGH} (now ${number(high * 100)}%): ` + (sw ? `the result changes at about ${number(sw.probability * 100, 1)}%.` : 'no change between 0% and 100%.');
@@ -1360,7 +1397,7 @@ return Plotly;
         let job = null;
         if (p === 2) {
           if (!(state.wealth > 0)) { $('utility-caption').textContent = 'Enter W above zero to see the curve.'; return; }
-          const f = utilityFigure(); $('utility-caption').textContent = f.caption; job = plot('utility-chart', f, resize);
+          const f = utilityFigure(); $('utility-caption').textContent = /must be above/.test(wealthNote(state.wealth)) ? '' : f.caption; job = plot('utility-chart', f, resize);
         } else if (p === 3) job = plot('distribution-chart', distributionFigure(), resize);
         else if (p === 5 && cached && revealed()) { const f = costFigure(costView); $('cost-chart-caption').textContent = f.caption; job = plot('cost-chart', f, resize); }
         else if (p === 6 && whatIf && revealed()) job = plot('switch-chart', mapFigure(), resize).then(bindMapClick);
@@ -1526,7 +1563,7 @@ return Plotly;
       const settings = whatIf && changed() ? `<p>What if settings when downloading: γ = ${gammaText(w.gamma)}, W = ${money(w.wealth)}, chance of ${HIGH} ${number(w.binProbabilities.at(-1) * 100, 1)}%, costs × ${number(e.scale, 2)}. Recommendation with these settings: ${picks(w.result)}.</p>` : '';
       const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My deductible decision</title><style>body{font:16px/1.6 system-ui;color:#203a33;max-width:1000px;margin:35px auto;padding:25px}h1{font-size:36px;font-weight:500}h2{margin-top:34px;font-size:23px}img{width:100%}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #d7dfd8;padding:9px;text-align:right}td:first-child,th:first-child{text-align:left}.reflection{white-space:pre-wrap}.small{font-size:13px;color:#64756e}button{padding:10px 18px;background:#195847;color:white;border:0;border-radius:6px}.wrap{overflow:auto}pre{white-space:pre-wrap}@media print{body{margin:0;padding:10px}button{display:none}img{break-inside:avoid}h2{break-after:avoid}}</style></head><body><button onclick="window.print()">Print / save as PDF</button>
 <h1>My deductible decision</h1><p class="small">Insurance Management · ${new Date().toISOString().slice(0, 10)}</p>
-<p><strong>Model recommendation with my answers:</strong> ${picks(c.result)}. <strong>Lowest expected cost:</strong> ${c.result.cheapest.map(x => money(x.deductible)).join(' / ')}.</p>
+<p><strong>Model recommendation with my answers:</strong> ${picks(c.result)}.${c.result.excluded.length ? ' ' + esc(leftOutText(c.result.excluded, c.wealth)) : ''} <strong>Lowest expected cost:</strong> ${c.result.cheapest.map(x => money(x.deductible)).join(' / ')}.</p>
 <p>Current deductible: ${state.current === NOT_INSURED ? 'not in Swiss basic insurance' : d(state.current)}. Planned before the exercise: ${d(state.planned)}. Chosen after the exercise: ${d(state.after)}.</p>
 <p>Prediction: ${state.checks.prediction === 'none' ? 'none' : d(state.checks.prediction)}. Hand calculations correct: ${oopRight} of 2.</p>
 <h2>Risk aversion</h2><p>${r ? `Risk answers: ${state.hrs.join(', ')}; γ ${rangeText(r)}; suggested value ${gammaText(r.gamma)}.` : 'Risk-attitude questions not answered; the model started at γ = 0.5.'} Used: γ = ${gammaText(c.gamma)}, W = ${money(c.wealth)}.</p>${img(0, 'Utility curve')}<p>${esc(figures[0].caption)}</p>
