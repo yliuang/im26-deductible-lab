@@ -352,7 +352,7 @@ dialog{padding:22px}
           <p class="small muted">Utility: u(w) = w<sup>1−γ</sup> / (1−γ). With γ = 0.5 this is 2√w, which ranks every choice the same way as √w.</p>
           <button class="button" id="use-elicited">Use my suggested value</button>
           <label class="field">Money you can draw on next year, W (CHF)<input type="number" id="wealth-input" min="1" max="10000000" step="1000"></label>
-          <p class="small muted">A year's income or family support for premiums and medical bills, plus savings. The default is CHF 10,000; you can change it. The result can depend a lot on W: when premiums use up most of W, the worst case of a high deductible leaves little, so the model leans towards low deductibles.</p>
+          <p class="small muted">Not the cash you have now: a year's income or family support for premiums and medical bills, plus savings. The default is CHF 10,000; you can change it. The result can depend a lot on W: when premiums use up most of W, the worst case of a high deductible leaves little, so the model leans towards low deductibles.</p>
           <p id="wealth-note" class="small wealth-note" role="status" hidden></p>
         </div>
         <div><div id="utility-chart" class="chart" role="img" aria-label="Utility curve with a 50–50 gamble and its certainty equivalent"></div><p id="utility-caption" class="chart-caption" aria-live="polite"></p></div>
@@ -1159,6 +1159,8 @@ return Plotly;
     if (!offered.some(Boolean)) throw issue('Tick at least one deductible your insurer offers.', 4);
     if (personal && premiums.some((p, i) => offered[i] && !(p >= 0))) throw issue('Enter a monthly premium for each deductible, or untick those your insurer does not offer.', 4);
     const e = changes ? state.explore : noChanges();
+    // The student's own W must cover every worst case; the What if page may go lower and drops options instead.
+    if (!changes && state.wealth <= wealthNeeded()) throw issue(wealthRule(wealthNeeded()), 2); // describe() points to Premiums if the quotes look wrong
     const wealth = e.wealth ?? state.wealth;
     if (!(Number.isFinite(wealth) && wealth > 0)) throw issue('Enter W above zero.', 6);
     const base = probs.map(p => p / 100);
@@ -1177,16 +1179,19 @@ return Plotly;
     return { premiums: personal ? state.personalMonthly.map(p => Number.isFinite(p) ? p * 12 : NaN) : examplePremiums(), offered: personal ? [...state.offered] : M.DEDUCTIBLES.map(() => true) };
   }
   // Shown under W on the Risk aversion page as soon as W is too small for some or all deductibles.
-  function wealthNote(W) {
+  // Smallest W that covers the worst case (premium + deductible + CHF 700) of every offered deductible.
+  function wealthNeeded() {
     const { premiums, offered } = priceSettings();
     const cases = M.worstCases(premiums, offered);
-    if (!cases.length || !(W > 0)) return '';
-    const min = Math.min(...cases.map(x => x.worst)); const max = Math.max(...cases.map(x => x.worst));
-    const ceil = x => money(Math.ceil(x));
-    if (W <= min) return `With these premiums, W must be above ${ceil(min)} for the model to work: with less you could not cover the worst case of any deductible.`;
-    if (W <= max) return leftOutText(cases.filter(x => W <= x.worst), W) + ` Above ${ceil(max)} all ${cases.length} deductibles are compared.`;
-    return '';
+    return cases.length ? Math.max(...cases.map(x => x.worst)) : 0;
   }
+  const wealthRule = need => `W must be above ${money(Math.ceil(need))}, so that it covers the worst case of every deductible (premium plus deductible plus the CHF 700 cap).`;
+  // Shown under W on the Risk aversion page as soon as W is too small.
+  function wealthNote(W) {
+    const need = wealthNeeded();
+    return need && W > 0 && W <= need ? wealthRule(need) : '';
+  }
+
 
   function wealthText(regions) {
     const round = x => money(Math.round(x / 100) * 100);
@@ -1427,7 +1432,7 @@ return Plotly;
         let job = null;
         if (p === 2) {
           if (!(state.wealth > 0)) { $('utility-caption').textContent = 'Enter W above zero to see the curve.'; return; }
-          const f = utilityFigure(); $('utility-caption').textContent = /must be above/.test(wealthNote(state.wealth)) ? '' : f.caption; job = plot('utility-chart', f, resize);
+          const f = utilityFigure(); $('utility-caption').textContent = wealthNote(state.wealth) ? '' : f.caption; job = plot('utility-chart', f, resize);
         } else if (p === 3) job = plot('distribution-chart', distributionFigure(), resize);
         else if (p === 5 && cached && revealed()) { const f = costFigure(costView); $('cost-chart-caption').textContent = f.caption; job = plot('cost-chart', f, resize); }
         else if (p === 6 && whatIf && revealed()) job = plot('switch-chart', mapFigure(), resize).then(bindMapClick);
