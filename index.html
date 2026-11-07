@@ -327,7 +327,7 @@ dialog{padding:22px}
         <p class="lead">This is an exercise on choosing your health insurance deductible. You answer a few questions about risk and your expected healthcare costs, see which deductible a simple model would pick, and compare it with what you would choose yourself.</p>
         <p>The exercise is also an opportunity to reconsider your choice for next year. If you want to lower your deductible, your insurer must receive your notice by 30 November; raising it has a later deadline. Complete your comparison ahead of time, so we can discuss your reasoning in the tutorial on 30 November.</p>
         <p>If you are not in Swiss basic insurance, for example because you are an EU/EFTA/UK student covered at home or have an approved exemption, do the exercise as if you had a Swiss policy, using the example premiums.</p>
-        <div class="starting-point"><h2>Your deductible</h2><div class="field-row"><label class="field">Current deductible<select id="current-deductible"><option value="">Prefer not to say / not applicable</option></select></label><label class="field">Planned for next year<select id="planned-deductible"><option value="">Not decided</option></select></label></div><p class="small muted">Optional. Your answers are saved in this browser only.</p></div>
+        <div class="starting-point"><h2>You</h2><div class="field-row"><label class="field narrow">Your age<input type="number" id="age-input" min="19" max="120" step="1" inputmode="numeric"></label><label class="field">Current deductible<select id="current-deductible"><option value="">Prefer not to say / not applicable</option></select></label><label class="field">Planned for next year<select id="planned-deductible"><option value="">Not decided</option></select></label></div><p class="small muted">Optional. Your age sets the example premiums and healthcare costs; without it the examples are for a 22-year-old. Your answers are saved in this browser only.</p><p id="age-note" class="small wealth-note" role="status"></p></div>
         <div class="intro-actions"><button class="button primary large" data-go="1">Start →</button></div>
       </div>
     </section>
@@ -352,7 +352,7 @@ dialog{padding:22px}
           <p class="small muted">Utility: u(w) = w<sup>1−γ</sup> / (1−γ). With γ = 0.5 this is 2√w, which ranks every choice the same way as √w.</p>
           <button class="button" id="use-elicited">Use my suggested value</button>
           <label class="field">Money you can draw on next year, W (CHF)<input type="number" id="wealth-input" min="1" max="10000000" step="1000"></label>
-          <p class="small muted">A year's income or family support for premiums and medical bills, plus savings. The default is CHF 10,000; you can change it.</p>
+          <p class="small muted">A year's income or family support for premiums and medical bills, plus savings. The default is CHF 10,000; you can change it. The result can depend a lot on W: when premiums use up most of W, the worst case of a high deductible leaves little, so the model leans towards low deductibles.</p>
           <p id="wealth-note" class="small wealth-note" role="status" hidden></p>
         </div>
         <div><div id="utility-chart" class="chart" role="img" aria-label="Utility curve with a 50–50 gamble and its certainty equivalent"></div><p id="utility-caption" class="chart-caption" aria-live="polite"></p></div>
@@ -375,7 +375,7 @@ dialog{padding:22px}
 
     <section class="page" data-page="4" hidden aria-labelledby="premium-title">
       <div class="page-heading"><h1 id="premium-title">Premiums</h1><p class="lead">Use the example premiums, or enter next year's monthly premiums from your insurer's letter or the <a href="https://www.priminfo.admin.ch/de/praemien" target="_blank" rel="noopener">official premium calculator</a>. Use the same insurer, insurance model and accident cover for all six deductibles.</p></div>
-      <div class="field-row"><label class="field">Premiums<select id="price-mode"><option value="example">Example premiums (2026)</option><option value="personal">My own quotes</option></select></label><label class="field narrow">Quote year<input id="quote-year" type="number" min="2020" max="2100" step="1" value="2027"></label></div>
+      <div class="field-row"><label class="field">Premiums<select id="price-mode"><option value="example">Example premiums (2027)</option><option value="personal">My own quotes</option></select></label><label class="field narrow">Quote year<input id="quote-year" type="number" min="2020" max="2100" step="1" value="2027"></label></div>
       <p id="price-explanation" class="small"></p>
       <div id="premium-inputs" class="premium-grid"></div>
       <div id="price-warnings" class="price-warnings" role="status" hidden></div>
@@ -397,6 +397,7 @@ dialog{padding:22px}
         <div class="result-summary" aria-live="polite"><div><p>The model recommends</p><strong id="recommended-value"></strong><span id="recommended-context"></span></div><div><p>Lowest expected cost</p><strong id="neutral-value"></strong><span id="neutral-context"></span></div></div>
         <p id="prediction-note" class="small muted"></p>
         <p id="excluded-note" class="small wealth-note" hidden></p>
+        <p id="wealth-sensitivity" class="small muted" hidden></p>
         <div class="chart-title"><h2>What does each deductible cost?</h2></div>
         <div class="view-toggle" role="group" aria-label="Chart view"><button class="button quiet" data-cost-view="average" aria-pressed="true">Expected cost</button><button class="button quiet" data-cost-view="gap" aria-pressed="false">Difference from the best</button><button class="button quiet" data-cost-view="max" aria-pressed="false">Most you could pay</button></div>
         <p id="cost-chart-caption" class="chart-caption"></p>
@@ -406,7 +407,7 @@ dialog{padding:22px}
           <div class="table-wrap"><table><thead><tr><th>Deductible</th><th>Premium</th><th>Expected out-of-pocket</th><th>Expected total</th><th>CE cost</th><th>Maximum out-of-pocket</th></tr></thead><tbody id="results-table"></tbody></table></div>
           <p><strong>CE cost</strong> (certainty-equivalent cost): the fixed yearly amount you would find just as good as the uncertain cost of an option. It adds a charge for risk to the expected cost. <strong>Risk premium</strong>: CE cost minus expected total.</p>
           <div class="task"><div class="field-row"><label class="field">What is the risk premium of the recommended deductible? (CHF)<input type="number" id="task-premium" step="0.01"></label><button class="button" data-task="premium">Check</button></div><p id="task-premium-feedback" class="small" aria-live="polite"></p></div>
-          <p id="why-corners" class="small muted"><strong>Why only CHF 300 or CHF 2,500 without risk aversion?</strong> With the largest legal discount, each extra franc of deductible saves CHF 0.70 of premium and adds at most one franc of expected out-of-pocket cost, less the higher the deductible. So for a risk-neutral person (γ = 0) the cheapest option is always CHF 300 or CHF 2,500.</p>
+          <p id="why-corners" class="small muted"><strong>Why only CHF 300 or CHF 2,500 without risk aversion?</strong> In the example premiums each extra franc of deductible saves about CHF 0.70 of premium, almost the largest discount the law allows, and adds at most one franc of expected out-of-pocket cost, less the higher the deductible. So for a risk-neutral person (γ = 0) the cheapest option is CHF 300 or CHF 2,500.</p>
         </div>
       </div>
       <div class="page-bottom"><button class="button quiet" data-go="4">← Premiums</button><button class="button primary" data-go="6">What would change it? →</button></div>
@@ -461,8 +462,11 @@ dialog{padding:22px}
     <p>For each deductible, the model computes what you pay in each cost scenario (premium, deductible, then 10% up to CHF 700) and picks the option with the highest expected CRRA utility of what is left of W. Biener and Zou (2024) compare Swiss deductibles the same way and also use W = CHF 10,000. The certainty-equivalent cost turns expected utility back into francs.</p>
     <p><a href="https://alexandria.unisg.ch/server/api/core/bitstreams/9a73dc00-1da2-40f0-8081-b20e60949db6/content" target="_blank" rel="noopener">Biener &amp; Zou (2024)</a></p>
     <h3>Cost chances</h3>
-    <p>You give the percent chance for each of five cost ranges, adding up to 100%, as in the density questions of the New York Fed's Survey of Consumer Expectations (Armantier et al., 2017). Within the first four ranges, costs are spread evenly. Above CHF 9,500 every deductible has reached its cap, so the exact amount in the top range does not matter. The example values are the shares of people aged 21 to 25 in each range in 2025, from the Federal Office of Public Health (EFIND 2025, table 3.2, gross benefits), rounded.</p>
+    <p>You give the percent chance for each of five cost ranges, adding up to 100%, as in the density questions of the New York Fed's Survey of Consumer Expectations (Armantier et al., 2017). Within the first four ranges, costs are spread evenly. Above CHF 9,500 every deductible has reached its cap, so the exact amount in the top range does not matter. The example values are the shares of people in your age band in each range in 2025 (ages 19 and 20 use 21 to 25), from the Federal Office of Public Health (EFIND 2025, table 3.2, gross benefits), rounded.</p>
     <p><a href="https://www.newyorkfed.org/research/epr/2017/epr_2017_overview-of-sce_armantier" target="_blank" rel="noopener">Armantier et al. (2017)</a> · <a href="https://www.bag.admin.ch/de/individualdaten-krankenversicherung-statistik" target="_blank" rel="noopener">BAG: costs per insured person</a></p>
+    <h3>Example premiums</h3>
+    <p>2027 monthly premiums of one mid-priced insurer in the city of St. Gallen (premium region SG 1), standard model with accident cover, from the Federal Office of Public Health's premium data. Basic insurance has only three premium age classes, so the example uses the young-adult premiums up to age 25 and the adult premiums from 26. Accident cover is included because most students need it; only people who work at least 8 hours a week for one employer are covered by the employer's accident insurance and can leave it out.</p>
+    <p><a href="https://opendata.swiss/de/dataset/health-insurance-premiums" target="_blank" rel="noopener">BAG: premium data</a></p>
     <h3>What the model leaves out</h3>
     <p>It uses standard adult cost-sharing only: no hospital daily fee, maternity exemption, higher coinsurance on some medicines, subsidies or non-covered care. Children have other deductibles and a CHF 350 cap. Your use of care is the same for every deductible. Payment timing, borrowing limits and other financial risks are not modelled.</p>
     <h3>Swiss insurance rules</h3>
@@ -626,6 +630,8 @@ return Plotly;
 (function (root) {
   'use strict';
   const DEDUCTIBLES = [300, 500, 1000, 1500, 2000, 2500];
+  // Fixed annual premiums for the model tests only (300-deductible CHF 400 a month, largest legal discounts).
+  // The page's example premiums are real 2027 quotes chosen by age in app.js.
   const EXAMPLE_PREMIUMS = [4800, 4660, 4310, 3960, 3610, 3260];
   const ANCHOR = { probability: 0.1, loss: 2000 };
   const BINS = [[0, 500], [500, 2000], [2000, 5000], [5000, 10000], [10000, Infinity]];
@@ -1060,8 +1066,26 @@ return Plotly;
   const SHORT_RANGES = ['0–500', '500–2,000', '2,000–5,000', '5,000–10,000', '10,000+'];
   const TINY_RANGES = ['0–500', '500–2k', '2k–5k', '5k–10k', '10k+'];
   const HIGH = 'costs above CHF 10,000';
-  // People aged 21–25 by billed costs, 2025 (BAG, EFIND 2025, Table 3.2), rounded to add up to 100.
-  const EXAMPLE_PROBS = [51, 25, 13, 6, 5];
+  // Share of insured people in each cost range by age band, 2025 (BAG, Statistik der Individualdaten,
+  // EFIND 2025, Table 3.2 Brutto), rounded to add up to 100 (largest remainder). The table has no
+  // 19–20 band (16–20 includes minors), so 19- and 20-year-olds use 21–25.
+  const AGE_BANDS = [
+    [19, 25, '21 to 25', [51, 25, 13, 6, 5]], [26, 30, '26 to 30', [51, 23, 13, 7, 6]], [31, 35, '31 to 35', [47, 22, 14, 9, 8]],
+    [36, 40, '36 to 40', [45, 24, 15, 9, 7]], [41, 45, '41 to 45', [43, 25, 16, 9, 7]], [46, 50, '46 to 50', [38, 26, 18, 10, 8]],
+    [51, 55, '51 to 55', [31, 26, 21, 12, 10]], [56, 60, '56 to 60', [27, 25, 22, 13, 13]], [61, 65, '61 to 65', [22, 23, 24, 15, 16]],
+    [66, 70, '66 to 70', [15, 21, 26, 18, 20]], [71, 75, '71 to 75', [10, 18, 26, 20, 26]], [76, 80, '76 to 80', [6, 15, 25, 22, 32]],
+    [81, 85, '81 to 85', [4, 12, 23, 21, 40]], [86, 90, '86 to 90', [3, 10, 19, 19, 49]], [91, 120, 'over 90', [2, 7, 14, 15, 62]]
+  ].map(([from, to, label, probs]) => ({ from, to, label, probs }));
+  // Monthly 2027 premiums of one mid-priced insurer (SWICA, BAG no. 1384) in premium region SG 1
+  // (city of St. Gallen), standard model, with accident cover (BAG open data, Prämien_CH.csv, 2027).
+  // The law allows only three age classes; everyone from 26 pays the adult premium.
+  const EXAMPLE_MONTHLY = { young: [449.1, 437.5, 408.3, 379.1, 350.0, 320.8], adult: [598.8, 587.2, 558.0, 528.8, 499.7, 470.5] };
+  const DEFAULT_AGE = 22;
+  const ageUsed = () => Number.isFinite(state?.age) ? state.age : DEFAULT_AGE;
+  const ageBand = (age = ageUsed()) => AGE_BANDS.find(b => age >= b.from && age <= b.to) ?? AGE_BANDS.at(-1);
+  const exampleProbs = () => [...ageBand().probs];
+  const youngAdult = () => ageUsed() <= 25;
+  const examplePremiums = () => EXAMPLE_MONTHLY[youngAdult() ? 'young' : 'adult'].map(m => m * 12);
   // Above CHF 9,500 every deductible has reached its cap, so any amount there gives the same
   // result; 15,000 lies in the 10,000–20,000 class that holds most of the top range. It only
   // matters when the What if page scales costs down.
@@ -1077,7 +1101,7 @@ return Plotly;
   const NOT_INSURED = 'none';
   // `gamma` and `wealth` are the student's answers. `explore` holds the What if changes; null means "as in my answers".
   const noChanges = () => ({ gamma: null, wealth: null, high: null, scale: 1 });
-  const defaultState = () => ({ version: 6, page: 0, current: '', planned: '', after: '', hrsStarted: false, hrs: [], legacyRisk: null, gamma: .5, wealth: 10000, probs: [...EXAMPLE_PROBS], beliefSource: 'example', priceMode: 'example', quoteYear: 2027, personalMonthly: [null, null, null, null, null, null], offered: [true, true, true, true, true, true], explore: noChanges(), checks: { oop1: null, oop2: null, prediction: '', predictedWith: '' }, tasks: { flipGamma: null, riskPremium: null }, reflections: { choice: '', uncertainty: '', omitted: '' } });
+  const defaultState = () => ({ version: 6, page: 0, current: '', planned: '', after: '', hrsStarted: false, hrs: [], legacyRisk: null, gamma: .5, wealth: 10000, age: null, probs: [...AGE_BANDS[0].probs], beliefSource: 'example', priceMode: 'example', quoteYear: 2027, personalMonthly: [null, null, null, null, null, null], offered: [true, true, true, true, true, true], explore: noChanges(), checks: { oop1: null, oop2: null, prediction: '', predictedWith: '' }, tasks: { flipGamma: null, riskPremium: null }, reflections: { choice: '', uncertainty: '', omitted: '' } });
   let state = defaultState();
   let cached = null; // result with the student's answers
   let problem = null;
@@ -1130,7 +1154,7 @@ return Plotly;
     if (!(Number.isFinite(state.wealth) && state.wealth > 0)) throw issue('Enter W above zero.', 2);
     if (state.wealth > 10000000) throw issue('Enter W up to CHF 10,000,000.', 2);
     const personal = state.priceMode === 'personal';
-    const premiums = personal ? state.personalMonthly.map(p => Number.isFinite(p) ? p * 12 : NaN) : [...M.EXAMPLE_PREMIUMS];
+    const premiums = personal ? state.personalMonthly.map(p => Number.isFinite(p) ? p * 12 : NaN) : examplePremiums();
     const offered = personal ? [...state.offered] : M.DEDUCTIBLES.map(() => true);
     if (!offered.some(Boolean)) throw issue('Tick at least one deductible your insurer offers.', 4);
     if (personal && premiums.some((p, i) => offered[i] && !(p >= 0))) throw issue('Enter a monthly premium for each deductible, or untick those your insurer does not offer.', 4);
@@ -1150,7 +1174,7 @@ return Plotly;
   const leftOutText = (excluded, W) => excluded?.length ? `With W = ${money(W)} you could not cover the worst case of the ${andList(excluded.map(x => money(x.deductible)))} deductible${excluded.length > 1 ? 's' : ''} (premium plus deductible plus CHF 700), so the model leaves ${excluded.length > 1 ? 'them' : 'it'} out.` : '';
   function priceSettings() {
     const personal = state.priceMode === 'personal';
-    return { premiums: personal ? state.personalMonthly.map(p => Number.isFinite(p) ? p * 12 : NaN) : [...M.EXAMPLE_PREMIUMS], offered: personal ? [...state.offered] : M.DEDUCTIBLES.map(() => true) };
+    return { premiums: personal ? state.personalMonthly.map(p => Number.isFinite(p) ? p * 12 : NaN) : examplePremiums(), offered: personal ? [...state.offered] : M.DEDUCTIBLES.map(() => true) };
   }
   // Shown under W on the Risk aversion page as soon as W is too small for some or all deductibles.
   function wealthNote(W) {
@@ -1199,7 +1223,11 @@ return Plotly;
     cached = null; problem = null; whatIf = null; whatIfProblem = null;
     try {
       const inps = inputs();
-      cached = { ...inps, result: best(inps), band: bandText(inps) };
+      const result = best(inps);
+      // Same answers with a much larger W, to flag a result that mainly reflects a tight budget.
+      let richer = null;
+      if (inps.wealth < 100000) { try { const rb = best(inps, 100000).best; if (rb[0].deductible !== result.best[0].deductible) richer = rb; } catch (_) { richer = null; } }
+      cached = { ...inps, result, band: bandText(inps), richer };
     } catch (error) { problem = describe(error, 2); return; }
     try { whatIf = analyse(inputs(true)); } catch (error) { whatIfProblem = describe(error, 6); }
   }
@@ -1317,7 +1345,7 @@ return Plotly;
     const diff = 100 - total;
     $('prob-total').textContent = Math.abs(diff) < 1e-9 ? 'Total: 100%' : diff > 0 ? `Total: ${number(total)}% · ${number(diff)}% still to assign` : `Total: ${number(total)}% · ${number(-diff)}% too much`;
     $('prob-total').classList.toggle('is-off', Math.abs(diff) > 1e-9);
-    $('belief-source').innerHTML = state.beliefSource === 'example' ? 'Example values: the share of people aged 21 to 25 in Switzerland in each range in 2025. Replace them with your own.' : 'Your own values. <button class="text-button" id="example-beliefs">Reset to the example</button>';
+    $('belief-source').innerHTML = state.beliefSource === 'example' ? `Example values: the share of people aged ${ageBand().label} in Switzerland in each range in 2025. Replace them with your own.` : 'Your own values. <button class="text-button" id="example-beliefs">Reset to the example</button>';
   }
 
   function renderPrices() {
@@ -1325,8 +1353,8 @@ return Plotly;
     $('price-mode').value = state.priceMode;
     $('quote-year').value = state.quoteYear;
     $('quote-year').disabled = !personal;
-    $('price-explanation').textContent = personal ? 'Enter next year’s monthly premiums. Untick deductibles your insurer does not offer. If you are 19 to 25, use the young-adult premiums: insurers may charge young adults less and offer them other deductibles and discounts.' : 'Example: CHF 400 a month with the CHF 300 deductible. Higher deductibles get the largest discount the law allows. These are not real quotes.';
-    $('premium-inputs').innerHTML = M.DEDUCTIBLES.map((f, i) => `<div class="premium-item"><strong>${money(f)} deductible</strong><label class="sr-only" for="premium-${i}">Monthly premium for CHF ${f} deductible</label><input type="number" id="premium-${i}" data-premium="${i}" min="0" max="10000" step="0.01" placeholder="CHF / month" value="${personal ? state.personalMonthly[i] ?? '' : (M.EXAMPLE_PREMIUMS[i] / 12).toFixed(2)}" ${!personal || !state.offered[i] ? 'disabled' : ''}><small>CHF / month</small>${personal ? `<label class="available"><input type="checkbox" data-offered="${i}" ${state.offered[i] ? 'checked' : ''}>Offered</label>` : ''}</div>`).join('');
+    $('price-explanation').textContent = personal ? 'Enter next year’s monthly premiums. Untick deductibles your insurer does not offer. If you are 19 to 25, use the young-adult premiums: insurers may charge young adults less and offer them other deductibles and discounts.' : `Example: 2027 premiums of a mid-priced insurer in the city of St. Gallen for ${youngAdult() ? 'young adults (19 to 25)' : 'adults (26 and older)'}, standard model with accident cover. Your own insurer may charge more or less.`;
+    $('premium-inputs').innerHTML = M.DEDUCTIBLES.map((f, i) => `<div class="premium-item"><strong>${money(f)} deductible</strong><label class="sr-only" for="premium-${i}">Monthly premium for CHF ${f} deductible</label><input type="number" id="premium-${i}" data-premium="${i}" min="0" max="10000" step="0.01" placeholder="CHF / month" value="${personal ? state.personalMonthly[i] ?? '' : (examplePremiums()[i] / 12).toFixed(2)}" ${!personal || !state.offered[i] ? 'disabled' : ''}><small>CHF / month</small>${personal ? `<label class="available"><input type="checkbox" data-offered="${i}" ${state.offered[i] ? 'checked' : ''}>Offered</label>` : ''}</div>`).join('');
     renderPriceWarnings();
   }
 
@@ -1350,7 +1378,9 @@ return Plotly;
     $('recommended-context').textContent = r.best.length > 1 ? 'A tie.' : cached.band || 'Lowest CE cost.';
     $('neutral-value').textContent = r.cheapest.map(x => money(x.deductible)).join(' / ');
     $('neutral-context').textContent = `${money(r.cheapest[0].expectedCost)} a year in expectation.`;
-    const left = (quotesLookWrong() && r.excluded.length ? 'Your premium quotes look unusual. ' : '') + leftOutText(r.excluded, cached.wealth); $('excluded-note').textContent = left; $('excluded-note').hidden = !left;
+    const left = (quotesLookWrong() && r.excluded.length ? 'Your premium quotes look unusual. ' : '') + leftOutText(r.excluded, cached.wealth);
+    $('wealth-sensitivity').textContent = cached.richer ? `With W = CHF 100,000 and the same answers, the model would recommend ${cached.richer.map(x => money(x.deductible)).join(' / ')}. Your result depends on W: with W = ${money(cached.wealth)}, the premiums leave little room for the worst case of a high deductible. Try other values on the What if page.` : '';
+    $('wealth-sensitivity').hidden = !cached.richer; $('excluded-note').textContent = left; $('excluded-note').hidden = !left;
     $('prediction-note').textContent = state.checks.prediction && state.checks.prediction !== 'none' ? `You predicted ${money(Number(state.checks.prediction))}.` : '';
     $('results-table').innerHTML = r.rows.map(x => `<tr class="${r.best.some(b => b.deductible === x.deductible) ? 'recommended' : ''}"><td>${money(x.deductible)}${Number(state.current) === x.deductible ? ' · current' : ''}</td><td>${money(x.premium)}</td><td>${money(x.expectedOOP)}</td><td>${money(x.expectedCost)}</td><td>${money(x.ce)}</td><td>${money(x.maximumOOP)}</td></tr>`).join('');
   }
@@ -1500,13 +1530,14 @@ return Plotly;
       M.hrsResult(raw.hrs);
       next.hrs = [...raw.hrs]; next.hrsStarted = Boolean(raw.hrsStarted);
       next.wealth = finiteIn(raw.wealth, 1, 10000000) ?? 10000;
+      next.age = Number.isInteger(raw.age) ? finiteIn(raw.age, 19, 120) : null;
       next.legacyRisk = raw.legacyRisk ?? null;
       next.gamma = finiteIn(raw.version === 6 ? raw.gamma : raw.explore?.gamma, 0, 20) ?? .5;
     } else next.legacyRisk = { model: 'CARA', lotteryAnswers: raw.quiz ?? [], costAnswers: raw.lossQuiz ?? [], fee: raw.explore?.fee ?? null };
     const current = raw.version === 6;
     loadNote = !current && raw.beliefSource === 'personal' ? 'The cost ranges have changed, so please enter your cost chances again.' : '';
     if (current) {
-      if (!Array.isArray(raw.probs) || raw.probs.length !== EXAMPLE_PROBS.length) throw new Error('Invalid cost chances.');
+      if (!Array.isArray(raw.probs) || raw.probs.length !== 5) throw new Error('Invalid cost chances.');
       next.probs = raw.probs.map(p => finiteIn(p, 0, 100) ?? 0);
       next.beliefSource = raw.beliefSource === 'personal' ? 'personal' : 'example';
       const e = raw.explore ?? {};
@@ -1535,6 +1566,7 @@ return Plotly;
   }
 
   function syncUI() {
+    if (document.activeElement !== $('age-input')) $('age-input').value = state.age ?? '';
     $('current-deductible').value = state.current; $('planned-deductible').value = state.planned; $('after-deductible').value = state.after;
     OOP_CHECKS.forEach(c => { $(c.id).value = state.checks[c.key] ?? ''; });
     $('prediction').value = state.checks.prediction;
@@ -1563,13 +1595,13 @@ return Plotly;
       const settings = whatIf && changed() ? `<p>What if settings when downloading: γ = ${gammaText(w.gamma)}, W = ${money(w.wealth)}, chance of ${HIGH} ${number(w.binProbabilities.at(-1) * 100, 1)}%, costs × ${number(e.scale, 2)}. Recommendation with these settings: ${picks(w.result)}.</p>` : '';
       const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My deductible decision</title><style>body{font:16px/1.6 system-ui;color:#203a33;max-width:1000px;margin:35px auto;padding:25px}h1{font-size:36px;font-weight:500}h2{margin-top:34px;font-size:23px}img{width:100%}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #d7dfd8;padding:9px;text-align:right}td:first-child,th:first-child{text-align:left}.reflection{white-space:pre-wrap}.small{font-size:13px;color:#64756e}button{padding:10px 18px;background:#195847;color:white;border:0;border-radius:6px}.wrap{overflow:auto}pre{white-space:pre-wrap}@media print{body{margin:0;padding:10px}button{display:none}img{break-inside:avoid}h2{break-after:avoid}}</style></head><body><button onclick="window.print()">Print / save as PDF</button>
 <h1>My deductible decision</h1><p class="small">Insurance Management · ${new Date().toISOString().slice(0, 10)}</p>
-<p><strong>Model recommendation with my answers:</strong> ${picks(c.result)}.${c.result.excluded.length ? ' ' + esc(leftOutText(c.result.excluded, c.wealth)) : ''} <strong>Lowest expected cost:</strong> ${c.result.cheapest.map(x => money(x.deductible)).join(' / ')}.</p>
-<p>Current deductible: ${state.current === NOT_INSURED ? 'not in Swiss basic insurance' : d(state.current)}. Planned before the exercise: ${d(state.planned)}. Chosen after the exercise: ${d(state.after)}.</p>
+<p><strong>Model recommendation with my answers:</strong> ${picks(c.result)}.${c.result.excluded.length ? ' ' + esc(leftOutText(c.result.excluded, c.wealth)) : ''}${c.richer ? ` With W = CHF 100,000 the model would recommend ${c.richer.map(x => money(x.deductible)).join(' / ')}.` : ''} <strong>Lowest expected cost:</strong> ${c.result.cheapest.map(x => money(x.deductible)).join(' / ')}.</p>
+<p>Age: ${state.age ?? 'not stated (examples for age 22)'}. Current deductible: ${state.current === NOT_INSURED ? 'not in Swiss basic insurance' : d(state.current)}. Planned before the exercise: ${d(state.planned)}. Chosen after the exercise: ${d(state.after)}.</p>
 <p>Prediction: ${state.checks.prediction === 'none' ? 'none' : d(state.checks.prediction)}. Hand calculations correct: ${oopRight} of 2.</p>
 <h2>Risk aversion</h2><p>${r ? `Risk answers: ${state.hrs.join(', ')}; γ ${rangeText(r)}; suggested value ${gammaText(r.gamma)}.` : 'Risk-attitude questions not answered; the model started at γ = 0.5.'} Used: γ = ${gammaText(c.gamma)}, W = ${money(c.wealth)}.</p>${img(0, 'Utility curve')}<p>${esc(figures[0].caption)}</p>
 ${state.legacyRisk ? `<details><summary>Answers from the earlier version</summary><pre>${esc(JSON.stringify(state.legacyRisk, null, 2))}</pre></details>` : ''}
 <h2>Healthcare costs</h2><p>Chances${state.beliefSource === 'example' ? ' (example values)' : ''}: ${RANGES.map((x, i) => `${x}: ${number(state.probs[i])}%`).join('; ')}.</p>${img(1, 'Cost chances')}
-<h2>Premiums</h2><p>${state.priceMode === 'example' ? 'Example premiums (2026, largest legal discounts).' : `My quotes for ${state.quoteYear}.`}${warnings.length ? ' Checks: ' + esc(warnings.join(' ')) : ''}</p>
+<h2>Premiums</h2><p>${state.priceMode === 'example' ? `Example premiums: 2027, ${youngAdult() ? 'young adults (19 to 25)' : 'adults (26 and older)'}, a mid-priced insurer in the city of St. Gallen, standard model with accident cover.` : `My quotes for ${state.quoteYear}.`}${warnings.length ? ' Checks: ' + esc(warnings.join(' ')) : ''}</p>
 <h2>Result</h2>${img(2, 'Expected cost and CE cost')}<div class="wrap"><table><thead><tr><th>Deductible</th><th>Premium</th><th>Expected out-of-pocket</th><th>Expected total</th><th>CE cost</th><th>Maximum out-of-pocket</th></tr></thead><tbody>${rows}</tbody></table></div>${img(3, 'Most you could pay')}<p>Risk premium task: ${Number.isFinite(state.tasks.riskPremium) ? money(state.tasks.riskPremium, 2) : 'not answered'} (model: ${money(c.result.best[0].riskPremium, 2)}).</p>
 <h2>What would change it</h2>${settings}${img(4, 'Recommendation map')}<p>${M.DEDUCTIBLES.map((f, i) => `<span style="color:${COLORS[i]}">■</span> ${money(f)}`).join(' &nbsp; ')}</p><p>W: ${esc(wealthSentence(w))} ${esc(sw)}</p><p>γ task: ${Number.isFinite(state.tasks.flipGamma) ? gammaText(state.tasks.flipGamma) : 'not answered'}.</p>
 ${Object.entries(REFLECTIONS).map(([key, label]) => `<h2>${label}</h2><p class="reflection">${esc(state.reflections[key] || 'No answer.')}</p>`).join('')}
@@ -1590,6 +1622,17 @@ ${Object.entries(REFLECTIONS).map(([key, label]) => `<h2>${label}</h2><p class="
   document.addEventListener('click', event => { const b = event.target.closest('[data-go]'); if (b) navigate(Number(b.dataset.go)); });
   document.querySelectorAll('[data-step]').forEach(b => b.addEventListener('click', () => navigate(Number(b.dataset.step))));
   document.querySelector('.brand').addEventListener('click', event => { event.preventDefault(); navigate(0); });
+  $('age-input').addEventListener('input', e => {
+    const v = e.target.value === '' ? null : Number(e.target.value);
+    state.age = Number.isInteger(v) && v >= 19 && v <= 120 ? v : null;
+    $('age-note').textContent = e.target.value !== '' && state.age === null ? 'Enter a whole number from 19.' : '';
+    // Example values follow the age; a prediction made with the old examples no longer counts.
+    if (state.beliefSource === 'example') {
+      state.probs = exampleProbs(); state.explore.high = null;
+      if (state.checks.predictedWith === 'example') { state.checks.prediction = ''; state.checks.predictedWith = ''; $('prediction').value = ''; }
+    }
+    renderCosts(); renderPrices(); refresh();
+  });
   $('current-deductible').addEventListener('change', e => { state.current = e.target.value; refresh(); });
   $('planned-deductible').addEventListener('change', e => { state.planned = e.target.value; });
   $('after-deductible').addEventListener('change', e => { state.after = e.target.value; });
@@ -1618,7 +1661,7 @@ ${Object.entries(REFLECTIONS).map(([key, label]) => `<h2>${label}</h2><p class="
   });
   $('belief-source').addEventListener('click', event => {
     if (event.target.id !== 'example-beliefs') return;
-    state.probs = [...EXAMPLE_PROBS]; state.beliefSource = 'example'; state.explore.high = null;
+    state.probs = exampleProbs(); state.beliefSource = 'example'; state.explore.high = null;
     renderCosts(); refresh();
   });
 
