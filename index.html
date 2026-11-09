@@ -1498,10 +1498,19 @@ return Plotly;
     const row = practiceRow(cached.result);
     state.checks.bills = BILLS.map((_, i) => { const v = $('bill-' + i).value; return v === '' ? null : Number(v); });
     if (state.checks.bills.some(v => !Number.isFinite(v))) { $('scenario-feedback').textContent = 'Fill in all four amounts first.'; persist(); return; }
-    const parts = BILLS.map((b, i) => {
-      const oop = M.outOfPocket(b, row.deductible);
-      return billRight(state.checks.bills[i], row, b) ? `${money(b)}: correct, ${money(row.premium)} + ${money(oop)} = ${money(row.premium + oop)}.` : `${money(b)}: not quite. ${b === 0 ? 'With no bills you pay only the premium.' : M.outOfPocket(b, row.deductible) - Math.min(b, row.deductible) >= 700 ? 'Remember the CHF 700 cap on the 10% part.' : 'Deductible first, then 10% of the rest.'}`;
-    });
+    // Show the working for every bill: premium + deductible part + 10% part (capped at 700).
+    const n = x => number(x, 0);
+    const working = b => {
+      const d = row.deductible; const p = n(row.premium); const total = money(billAnswer(row, b));
+      if (b === 0) return `${p} + 0 = ${total} (with no bills you pay only the premium)`;
+      if (b <= d) return `${p} + ${n(b)} = ${total} (the whole bill is below the deductible, so you pay all of it)`;
+      const share = .1 * (b - d);
+      if (share <= 700) return `${p} + ${n(d)} + 10% × (${n(b)} − ${n(d)}) = ${p} + ${n(d)} + ${n(share)} = ${total} (the deductible, then 10% of the rest)`;
+      return `${p} + ${n(d)} + 700 = ${total} (the deductible, then 10% of the rest, but 10% × (${n(b)} − ${n(d)}) = ${n(share)} is above the CHF 700 cap)`;
+    };
+    const parts = BILLS.map((b, i) => billRight(state.checks.bills[i], row, b)
+      ? `Bills of ${money(b)}: correct, ${working(b)}.`
+      : `Bills of ${money(b)}: you entered ${money(state.checks.bills[i])}; the answer is ${working(b)}.`);
     state.checks.billsChecked = true;
     $('scenario-feedback').innerHTML = `<ul>${parts.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
     $('scenario-full').hidden = false;
