@@ -366,7 +366,7 @@ dialog{padding:22px}
     </section>
 
     <section class="page" data-page="3" hidden aria-labelledby="costs-title">
-      <div class="page-heading"><h1 id="costs-title">Your healthcare costs next year</h1><p class="lead">How likely is each amount? Think of the full bill for care covered by basic insurance, before your insurer pays anything, and leave out premiums. The five chances must add up to 100%.</p></div>
+      <div class="page-heading"><h1 id="costs-title">Your healthcare costs next year</h1><p class="lead">How likely is each amount? Think of the full bill for care covered by basic insurance, before your insurer pays anything. The five chances must add up to 100%. Think of your bills in the last two or three years; your insurer’s app or yearly statement lists them.</p></div>
       <div class="costs-layout">
         <div>
           <div id="prob-grid" class="prob-grid"></div>
@@ -1100,7 +1100,7 @@ return Plotly;
   const NOT_INSURED = 'none';
   // `gamma` and `wealth` are the student's answers. `explore` holds the What if changes; null means "as in my answers".
   const noChanges = () => ({ gamma: null, wealth: null, high: null, scale: 1 });
-  const defaultState = () => ({ version: 6, page: 0, current: '', planned: '', after: '', hrsStarted: false, hrs: [], legacyRisk: null, gamma: .5, wealth: 10000, age: null, probs: [...AGE_BANDS[0].probs], beliefSource: 'example', priceMode: 'example', quoteYear: 2027, personalMonthly: [null, null, null, null, null, null], offered: [true, true, true, true, true, true], explore: noChanges(), checks: { oop1: null, oop2: null, prediction: '', predictedWith: '', bills: [null, null, null, null], billsChecked: false }, tasks: { flipGamma: null, riskPremium: null }, reflections: { current: '', selfRisk: '', choice: '', uncertainty: '', omitted: '' } });
+  const defaultState = () => ({ version: 6, page: 0, current: '', planned: '', after: '', hrsStarted: false, hrs: [], legacyRisk: null, gamma: .5, wealth: 10000, age: null, probs: [null, null, null, null, null], beliefSource: 'none', exampleShown: false, priceMode: 'example', quoteYear: 2027, personalMonthly: [null, null, null, null, null, null], offered: [true, true, true, true, true, true], explore: noChanges(), checks: { oop1: null, oop2: null, prediction: '', predictedWith: '', bills: [null, null, null, null], billsChecked: false }, tasks: { flipGamma: null, riskPremium: null }, reflections: { current: '', selfRisk: '', choice: '', uncertainty: '', omitted: '' } });
   let state = defaultState();
   let cached = null; // result with the student's answers
   let problem = null;
@@ -1147,7 +1147,9 @@ return Plotly;
   // With changes = true, the What if settings replace the student's answers.
   function inputs(changes = false) {
     const probs = state.probs;
-    if (probs.some(p => !Number.isFinite(p) || p < 0 || p > 100)) throw issue('Each chance must be between 0% and 100%.', 3);
+    if (probs.every(p => p === null || Number.isNaN(p))) throw issue('Enter your chances for the five cost ranges.', 3);
+    if (probs.some(p => !Number.isFinite(p))) throw issue('Enter a chance for each of the five ranges (0% is fine).', 3);
+    if (probs.some(p => p < 0 || p > 100)) throw issue('Each chance must be between 0% and 100%.', 3);
     const total = probs.reduce((a, b) => a + b, 0);
     if (Math.abs(total - 100) > 1e-9) throw issue(`Your cost chances add up to ${number(total)}%, not 100%.`, 3);
     if (!(Number.isFinite(state.wealth) && state.wealth > 0)) throw issue('Enter W above zero.', 2);
@@ -1258,8 +1260,8 @@ return Plotly;
 
   function distributionFigure() {
     return {
-      data: [{ type: 'bar', x: narrow() ? TINY_RANGES : SHORT_RANGES, y: state.probs, text: state.probs.map(p => number(p) + '%'), textposition: 'outside', cliponaxis: false, marker: { color: ['#8fb39b', '#5f9a7e', '#3f7663', '#264f43', '#c9853b'] }, hovertemplate: '%{x} CHF: %{y}%<extra></extra>' }],
-      layout: { ...baseLayout, height: narrow() ? 300 : 330, margin: { l: 55, r: 12, b: 60, t: 25 }, bargap: .3, xaxis: { title: { text: 'Billed care next year (CHF)', standoff: 12 }, type: 'category', fixedrange: true, tickfont: { size: narrow() ? 10 : 12 } }, yaxis: { title: { text: 'Chance (%)', standoff: 10 }, range: [0, Math.min(110, Math.max(50, ...state.probs.map(p => p + 12)))], fixedrange: true, gridcolor: '#dfe4dc' } }
+      data: [{ type: 'bar', x: narrow() ? TINY_RANGES : SHORT_RANGES, y: state.probs.map(p => Number.isFinite(p) ? p : 0), text: state.probs.map(p => Number.isFinite(p) ? number(p) + '%' : ''), textposition: 'outside', cliponaxis: false, marker: { color: ['#8fb39b', '#5f9a7e', '#3f7663', '#264f43', '#c9853b'] }, hovertemplate: '%{x} CHF: %{y}%<extra></extra>' }],
+      layout: { ...baseLayout, height: narrow() ? 300 : 330, margin: { l: 55, r: 12, b: 60, t: 25 }, bargap: .3, xaxis: { title: { text: 'Billed care next year (CHF)', standoff: 12 }, type: 'category', fixedrange: true, tickfont: { size: narrow() ? 10 : 12 } }, yaxis: { title: { text: 'Chance (%)', standoff: 10 }, range: [0, Math.min(110, Math.max(50, ...state.probs.map(p => (Number.isFinite(p) ? p : 0) + 12)))], fixedrange: true, gridcolor: '#dfe4dc' } }
     };
   }
 
@@ -1349,7 +1351,10 @@ return Plotly;
     const diff = 100 - total;
     $('prob-total').textContent = Math.abs(diff) < 1e-9 ? 'Total: 100%' : diff > 0 ? `Total: ${number(total)}% · ${number(diff)}% still to assign` : `Total: ${number(total)}% · ${number(-diff)}% too much`;
     $('prob-total').classList.toggle('is-off', Math.abs(diff) > 1e-9);
-    $('belief-source').innerHTML = state.beliefSource === 'example' ? `Example values: the share of people aged ${ageBand().label} in Switzerland in each range in 2025. Replace them with your own.` : 'Your own values. <button class="text-button" id="example-beliefs">Reset to the example</button>';
+    const exampleButton = label => `<button class="text-button" id="example-beliefs">${label}</button>`;
+    $('belief-source').innerHTML = state.beliefSource === 'example' ? `Example values: the share of people aged ${ageBand().label} in Switzerland in each range in 2025. Replace them with your own.`
+      : state.beliefSource === 'none' ? `Not sure? ${exampleButton(`Show the values for people aged ${ageBand().label}`)} (Switzerland, 2025) and adjust them.`
+      : `Your own values. ${exampleButton('Replace them with the example')}`;
   }
 
   function renderPrices() {
@@ -1578,10 +1583,13 @@ return Plotly;
     } else next.legacyRisk = { model: 'CARA', lotteryAnswers: raw.quiz ?? [], costAnswers: raw.lossQuiz ?? [], fee: raw.explore?.fee ?? null };
     const current = raw.version === 6;
     loadNote = !current && raw.beliefSource === 'personal' ? 'The cost ranges have changed, so please enter your cost chances again.' : '';
+    // Older files used other cost ranges: example values stay example values; own values must be entered again.
+    if (!current && raw.beliefSource !== 'personal') { next.probs = [...AGE_BANDS[0].probs]; next.beliefSource = 'example'; next.exampleShown = true; }
     if (current) {
       if (!Array.isArray(raw.probs) || raw.probs.length !== 5) throw new Error('Invalid cost chances.');
-      next.probs = raw.probs.map(p => finiteIn(p, 0, 100) ?? 0);
-      next.beliefSource = raw.beliefSource === 'personal' ? 'personal' : 'example';
+      next.probs = raw.probs.map(p => p === null ? null : finiteIn(p, 0, 100) ?? 0);
+      next.beliefSource = ['personal', 'none'].includes(raw.beliefSource) ? raw.beliefSource : 'example';
+      next.exampleShown = raw.exampleShown === true || next.beliefSource === 'example';
       const e = raw.explore ?? {};
       const orNull = (x, lo, hi) => x === null || x === undefined ? null : finiteIn(x, lo, hi);
       next.explore = { gamma: orNull(e.gamma, 0, 20), wealth: orNull(e.wealth, 1, 10000000), high: orNull(e.high, 0, 1), scale: finiteIn(e.scale, .25, 3) ?? 1 };
@@ -1639,7 +1647,7 @@ return Plotly;
 <p>Age: ${state.age ?? 'not stated (examples for age 22)'}. Current deductible: ${state.current === NOT_INSURED ? 'not in Swiss basic insurance' : d(state.current)}.</p>
 <h2>Risk aversion</h2><p>${r ? `Risk answers: ${state.hrs.join(', ')}; γ ${rangeText(r)}; suggested value ${gammaText(r.gamma)}.` : 'Risk-attitude questions not answered; the model started at γ = 0.5.'} Used: γ = ${gammaText(c.gamma)}, W = ${money(c.wealth)}.</p>${img(0, 'Utility curve')}<p>${esc(figures[0].caption)}</p>
 ${state.legacyRisk ? `<details><summary>Answers from the earlier version</summary><pre>${esc(JSON.stringify(state.legacyRisk, null, 2))}</pre></details>` : ''}
-<h2>Healthcare costs</h2><p>Chances${state.beliefSource === 'example' ? ' (example values)' : ''}: ${RANGES.map((x, i) => `${x}: ${number(state.probs[i])}%`).join('; ')}.</p>${img(1, 'Cost chances')}
+<h2>Healthcare costs</h2><p>Chances${state.beliefSource === 'example' ? ' (example values, unchanged)' : state.exampleShown ? ' (my own, after seeing the example values)' : ' (my own, without the example values)'}: ${RANGES.map((x, i) => `${x}: ${number(state.probs[i])}%`).join('; ')}.</p>${img(1, 'Cost chances')}
 <h2>Premiums</h2><p>${state.priceMode === 'example' ? `Example premiums: 2027, ${youngAdult() ? 'young adults (19 to 25)' : 'adults (26 and older)'}, a mid-priced insurer in the city of St. Gallen, standard model with accident cover.` : `My quotes for ${state.quoteYear}.`}${warnings.length ? ' Checks: ' + esc(warnings.join(' ')) : ''}</p>
 <h2>Result</h2>${img(2, 'Expected cost and CE cost')}<div class="wrap"><table><thead><tr><th>Deductible</th><th>Premium</th><th>Expected out-of-pocket</th><th>Expected total</th><th>CE cost</th><th>Maximum out-of-pocket</th></tr></thead><tbody>${rows}</tbody></table></div>${img(3, 'Most you could pay')}<h3>Total cost if my bills are…</h3><p>${(() => { const row = practiceRow(c.result); const b = state.checks.bills; return b.every(Number.isFinite) ? `My calculation for ${money(row.deductible)}: ${BILLS.map((x, i) => `${money(x)} → ${money(b[i])} ${billRight(b[i], row, x) ? '(correct)' : `(should be ${money(billAnswer(row, x))})`}`).join('; ')}.` : 'My calculation: not done.'; })()}</p><p class="small">Premium plus out of pocket for one year; lowest in each column in bold.</p><div class="wrap"><table><thead><tr><th>Deductible</th>${BILLS.map(b => `<th>${money(b)}</th>`).join('')}</tr></thead><tbody>${scenarioRows(c.result.rows, true)}</tbody></table></div><p>Risk premium task: ${Number.isFinite(state.tasks.riskPremium) ? money(state.tasks.riskPremium, 2) : 'not answered'} (model: ${money(c.result.best[0].riskPremium, 2)}).</p>
 <h2>What would change it</h2>${settings}${img(4, 'Recommendation map')}<p>${M.DEDUCTIBLES.map((f, i) => `<span style="color:${COLORS[i]}">■</span> ${money(f)}`).join(' &nbsp; ')}</p><p>W: ${esc(wealthSentence(w))} ${esc(sw)}</p><p>γ task: ${Number.isFinite(state.tasks.flipGamma) ? gammaText(state.tasks.flipGamma) : 'not answered'}.</p>
@@ -1694,7 +1702,7 @@ ${Object.entries(REFLECTIONS).map(([key, label]) => `<h2>${label}</h2><p class="
   });
   $('belief-source').addEventListener('click', event => {
     if (event.target.id !== 'example-beliefs') return;
-    state.probs = exampleProbs(); state.beliefSource = 'example'; state.explore.high = null;
+    state.probs = exampleProbs(); state.beliefSource = 'example'; state.exampleShown = true; state.explore.high = null;
     renderCosts(); refresh();
   });
 
