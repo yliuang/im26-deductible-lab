@@ -413,7 +413,6 @@ dialog{padding:22px}
             <p id="scenario-feedback" class="small" aria-live="polite"></p>
             <div id="scenario-full" hidden><p class="small muted">Every deductible: premium plus out of pocket for one year; the lowest in each column is in bold.</p><div class="table-wrap"><table><thead><tr><th>Deductible</th><th>Bills CHF 0</th><th>CHF 1,000</th><th>CHF 5,000</th><th>CHF 10,000</th></tr></thead><tbody id="scenario-table"></tbody></table></div></div>
           </div>
-          <p id="why-corners" class="small muted"><strong>Why only CHF 300 or CHF 2,500 without risk aversion?</strong> In the example premiums each extra franc of deductible saves about CHF 0.70 of premium, almost the largest discount the law allows, and adds at most one franc of expected out-of-pocket cost, less the higher the deductible. So for a risk-neutral person (γ = 0) the cheapest option is CHF 300 or CHF 2,500.</p>
         </div>
       </div>
       <div class="page-bottom"><button class="button quiet" data-go="4">← Premiums</button><button class="button primary" data-go="6">What would change it? →</button></div>
@@ -449,6 +448,7 @@ dialog{padding:22px}
         <div class="reflection-fields">
           <label class="field">Why did you choose your current deductible? If you are not in Swiss basic insurance, which deductible would you choose, and why?<textarea id="reflection-current" rows="5"></textarea></label>
           <label class="field"><span id="self-risk-gamma"></span> Does this reflect how you see your own attitude to risk when it comes to your health and healthcare costs? Why or why not?<textarea id="reflection-selfRisk" rows="5"></textarea></label>
+          <label class="field">With the example premiums, a risk-neutral person (γ = 0) is never recommended a deductible in between, such as CHF 1,000 or CHF 1,500: always CHF 300 or CHF 2,500. Why? (Try γ = 0 on the What if page.)<textarea id="reflection-corners" rows="5"></textarea></label>
           <label class="field">Would you follow the model's recommendation? Why or why not?<textarea id="reflection-choice" rows="5"></textarea></label>
           <label class="field">Which input are you least sure about: γ, the budget W or your cost chances? Would a realistic change flip the result?<textarea id="reflection-uncertainty" rows="5"></textarea></label>
           <label class="field">What does the model leave out?<textarea id="reflection-omitted" rows="5"></textarea></label>
@@ -1098,12 +1098,12 @@ return Plotly;
   const TOP_COST = 15000;
   const PAGE_NAMES = ['Start', 'Risk attitude', 'Your risk aversion', 'Healthcare costs', 'Premiums', 'Result', 'What if', 'Your decision'];
   const STORAGE_KEY = 'deductible-lab-progress';
-  const REFLECTIONS = { current: 'Why my current deductible', selfRisk: 'Measured and self-perceived risk attitude', choice: 'Would you follow the recommendation?', uncertainty: 'Least certain input', omitted: 'What the model leaves out' };
+  const REFLECTIONS = { current: 'Why my current deductible', selfRisk: 'Measured and self-perceived risk attitude', corners: 'Why risk neutrality picks CHF 300 or CHF 2,500', choice: 'Would you follow the recommendation?', uncertainty: 'Least certain input', omitted: 'What the model leaves out' };
   // "Current deductible" value for students outside Swiss basic insurance (home insurance or exemption).
   const NOT_INSURED = 'none';
   // `gamma` and `wealth` are the student's answers. `explore` holds the What if changes; null means "as in my answers".
   const noChanges = () => ({ gamma: null, wealth: null, high: null, scale: 1 });
-  const defaultState = () => ({ version: 6, page: 0, current: '', planned: '', after: '', hrsStarted: false, hrs: [], legacyRisk: null, gamma: .5, wealth: 10000, age: null, probs: [null, null, null, null, null], beliefSource: 'none', exampleShown: false, priceMode: 'example', quoteYear: 2027, personalMonthly: [null, null, null, null, null, null], offered: [true, true, true, true, true, true], explore: noChanges(), checks: { oop1: null, oop2: null, prediction: '', predictedWith: '', bills: [null, null, null, null], billsChecked: false }, tasks: { flipGamma: null, riskPremium: null }, reflections: { current: '', selfRisk: '', choice: '', uncertainty: '', omitted: '' } });
+  const defaultState = () => ({ version: 6, page: 0, current: '', planned: '', after: '', hrsStarted: false, hrs: [], legacyRisk: null, gamma: .5, wealth: 10000, age: null, probs: [null, null, null, null, null], beliefSource: 'none', exampleShown: false, priceMode: 'example', quoteYear: 2027, personalMonthly: [null, null, null, null, null, null], offered: [true, true, true, true, true, true], explore: noChanges(), checks: { oop1: null, oop2: null, prediction: '', predictedWith: '', bills: [null, null, null, null], billsChecked: false }, tasks: { flipGamma: null, riskPremium: null }, reflections: { current: '', selfRisk: '', corners: '', choice: '', uncertainty: '', omitted: '' } });
   let state = defaultState();
   let cached = null; // result with the student's answers
   let problem = null;
@@ -1453,7 +1453,6 @@ return Plotly;
   function renderResult() {
     const prices = state.priceMode === 'example' ? 'the example premiums' : `your ${state.quoteYear} quotes`;
     $('inputs-line').textContent = `Based on γ = ${gammaText(state.gamma)}, W = ${money(state.wealth || 0)}, ${state.beliefSource === 'example' ? 'the example cost chances' : 'your cost chances'} and ${prices}.`;
-    $('why-corners').hidden = state.priceMode !== 'example';
     $('results-validation').hidden = !problem;
     $('results-validation').innerHTML = problem ? `${esc(problem.text)}${problem.page !== undefined ? ` <button class="text-button" data-go="${problem.page}">Go to ${PAGE_NAMES[problem.page]}</button>` : ''}` : '';
     $('results-body').hidden = !cached || !revealed();
