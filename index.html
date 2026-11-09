@@ -305,6 +305,9 @@ dialog{padding:22px}
 .scenario-task .field.narrow{flex:0 1 190px}
 #scenario-feedback ul{margin:6px 0 0;padding-left:20px}
 #scenario-full tr.current{background:var(--green-soft)}
+.comparison{margin:0 0 34px;max-width:760px}
+.comparison table{width:100%}
+.comparison .table-wrap{margin-bottom:12px}
 
 </style>
 </head>
@@ -394,6 +397,7 @@ dialog{padding:22px}
         <div class="result-summary" aria-live="polite"><div><p>The model recommends</p><strong id="recommended-value"></strong><span id="recommended-context"></span></div><div><p>Lowest expected cost</p><strong id="neutral-value"></strong><span id="neutral-context"></span></div></div>
         <p id="excluded-note" class="small wealth-note" hidden></p>
         <p id="wealth-sensitivity" class="small muted" hidden></p>
+        <section id="comparison" class="comparison" hidden></section>
         <div class="chart-title"><h2>What does each deductible cost?</h2></div>
         <div class="view-toggle" role="group" aria-label="Chart view"><button class="button quiet" data-cost-view="average" aria-pressed="true">Expected cost</button><button class="button quiet" data-cost-view="gap" aria-pressed="false">Difference from the best</button><button class="button quiet" data-cost-view="max" aria-pressed="false">Most you could pay</button></div>
         <p id="cost-chart-caption" class="chart-caption"></p>
@@ -1271,7 +1275,7 @@ return Plotly;
     const best = result.best[0]; const cheap = result.cheapest[0];
     const d = r => money(r.deductible);
     const noRisk = rows.every(r => Math.abs(r.riskPremium) < .5);
-    if (rows.length < 2) return { average: `Only ${d(lo)} is left: premium plus expected out-of-pocket cost is ${money(lo.expectedCost)}.`, gap: '', max: '' };
+    if (rows.length < 2) { const only = { lead: `Only ${d(lo)} is left.`, body: `Premium plus expected out-of-pocket cost: ${money(lo.expectedCost)}.` }; return { average: only, gap: only, max: only }; }
     const premiumDrop = lo.premium - hi.premium; const oopRise = hi.expectedOOP - lo.expectedOOP;
     const same = best.deductible === cheap.deductible;
     const average = [
@@ -1292,7 +1296,39 @@ return Plotly;
       `Light bars: the most you could pay out of pocket in a bad year, the deductible plus CHF 700. Dots: what you expect to pay out of pocket. Premiums come on top.`,
       `In a bad year, ${d(hi)} costs up to ${money(hi.maximumOOP - lo.maximumOOP)} more out of pocket than ${d(lo)}; in an expected year the difference is only ${money(oopRise)}. This gap between the bad year and the expected year is what risk aversion weighs against ${premiumDrop > 0 ? `the premium saving of ${money(premiumDrop)}` : 'the premium difference'}.`
     ].join(' ');
-    return { average, gap, max };
+    const lead = {
+      average: 'A higher deductible lowers the expected cost (bars) but adds a charge for risk (dots); the model picks the lowest dot.',
+      gap: 'How far each deductible is from the best one, without and with the charge for risk.',
+      max: 'A higher deductible saves premium, but raises what you could pay in a bad year.'
+    };
+    return { average: { lead: lead.average, body: average }, gap: { lead: lead.gap, body: gap }, max: { lead: lead.max, body: max } };
+  }
+
+  // Head-to-head: the recommendation against the cheapest option on average (or, if they agree, against the safest).
+  function comparison(result) {
+    const best = result.best[0]; const cheap = result.cheapest[0]; const safe = result.rows[0];
+    const d = r => money(r.deductible);
+    const other = cheap.deductible !== best.deductible ? cheap : safe.deductible !== best.deductible ? safe : null;
+    if (!other) return null;
+    const vsCheap = other === cheap;
+    const title = `Why ${d(best)} and not ${d(other)}?`;
+    const lead = vsCheap ? `${d(other)} is cheaper on average, but its risk costs you more than it saves.`
+      : `${d(best)} is cheaper on average than ${d(other)}, and its extra risk is worth less to you than the saving.`;
+    const body = vsCheap
+      ? `${d(other)} costs ${money(best.expectedCost - other.expectedCost)} less on average, but its bills are less predictable. For you that risk is worth ${money(other.riskPremium)} a year, against ${money(best.riskPremium)} for ${d(best)}. So ${d(best)} comes out ${money(other.ce - best.ce)} ahead.`
+      : `${d(best)} costs ${money(other.expectedCost - best.expectedCost)} less on average than ${d(other)}. Its bills are less predictable, a risk worth ${money(best.riskPremium)} a year to you against ${money(other.riskPremium)}, but that is less than the saving. So ${d(best)} comes out ${money(other.ce - best.ce)} ahead.`;
+    const pair = [best, other];
+    const lower = (f, i) => f(pair[i]) < f(pair[1 - i]) - .5;
+    const cell = (f, i, bold) => `<td>${bold && lower(f, i) ? `<strong>${money(f(pair[i]))}</strong>` : money(f(pair[i]))}</td>`;
+    const line = (label, f, bold = false) => `<tr><td>${label}</td>${cell(f, 0, bold)}${cell(f, 1, bold)}</tr>`;
+    const table = `<table><thead><tr><th></th><th>${d(best)} (recommended)</th><th>${d(other)} (${vsCheap ? 'cheapest on average' : 'lowest deductible'})</th></tr></thead><tbody>${line('Premium', r => r.premium)}${line('Expected out-of-pocket', r => r.expectedOOP)}${line('Expected total cost', r => r.expectedCost, true)}${line('Charge for risk (risk premium)', r => r.riskPremium)}${line('CE cost (what the model compares)', r => r.ce, true)}</tbody></table>`;
+    return { title, lead, body, table };
+  }
+  function renderComparison() {
+    const c = comparison(cached.result);
+    $('comparison').hidden = !c;
+    if (!c) return;
+    $('comparison').innerHTML = `<h2>${esc(c.title)}</h2><p><strong>${esc(c.lead)}</strong></p><div class="table-wrap">${c.table}</div><p>${esc(c.body)}</p>`;
   }
 
   function costFigure(view, snap = cached) {
@@ -1421,7 +1457,7 @@ return Plotly;
     $('wealth-sensitivity').textContent = cached.richer ? `With W = CHF 100,000 and the same answers, the model would recommend ${cached.richer.map(x => money(x.deductible)).join(' / ')}. Your result depends on W: with W = ${money(cached.wealth)}, the premiums leave little room for the worst case of a high deductible. Try other values on the What if page.` : '';
     $('wealth-sensitivity').hidden = !cached.richer; $('excluded-note').textContent = left; $('excluded-note').hidden = !left;
     $('results-table').innerHTML = r.rows.map(x => `<tr class="${r.best.some(b => b.deductible === x.deductible) ? 'recommended' : ''}"><td>${money(x.deductible)}${Number(state.current) === x.deductible ? ' · current' : ''}</td><td>${money(x.premium)}</td><td>${money(x.expectedOOP)}</td><td>${money(x.expectedCost)}</td><td>${money(x.ce)}</td><td>${money(x.maximumOOP)}</td></tr>`).join('');
-    renderScenarios();
+    renderScenarios(); renderComparison();
   }
 
   const BILLS = [0, 1000, 5000, 10000];
@@ -1507,7 +1543,7 @@ return Plotly;
           if (!(state.wealth > 0)) { $('utility-caption').textContent = 'Enter W above zero to see the curve.'; return; }
           const f = utilityFigure(); $('utility-caption').textContent = wealthNote(state.wealth) ? '' : f.caption; job = plot('utility-chart', f, resize);
         } else if (p === 3) job = plot('distribution-chart', distributionFigure(), resize);
-        else if (p === 5 && cached && revealed()) { const f = costFigure(costView); $('cost-chart-caption').textContent = f.caption; job = plot('cost-chart', f, resize); }
+        else if (p === 5 && cached && revealed()) { const f = costFigure(costView); $('cost-chart-caption').innerHTML = `<strong>${esc(f.caption.lead)}</strong> ${esc(f.caption.body)}`; job = plot('cost-chart', f, resize); }
         else if (p === 6 && whatIf && revealed()) job = plot('switch-chart', mapFigure(), resize).then(bindMapClick);
         if (job) job.catch(e => message('Chart error: ' + e.message));
       } catch (e) { message('Chart error: ' + e.message); }
@@ -1680,7 +1716,7 @@ return Plotly;
 ${state.legacyRisk ? `<details><summary>Answers from the earlier version</summary><pre>${esc(JSON.stringify(state.legacyRisk, null, 2))}</pre></details>` : ''}
 <h2>Healthcare costs</h2><p>Chances${state.beliefSource === 'example' ? ' (example values, unchanged)' : state.exampleShown ? ' (my own, after seeing the example values)' : ' (my own, without the example values)'}: ${RANGES.map((x, i) => `${x}: ${number(state.probs[i])}%`).join('; ')}.</p>${img(1, 'Cost chances')}
 <h2>Premiums</h2><p>${state.priceMode === 'example' ? `Example premiums: 2027, ${youngAdult() ? 'young adults (19 to 25)' : 'adults (26 and older)'}, a mid-priced insurer in the city of St. Gallen, standard model with accident cover.` : `My quotes for ${state.quoteYear}.`}${warnings.length ? ' Checks: ' + esc(warnings.join(' ')) : ''}</p>
-<h2>Result</h2>${img(2, 'Expected cost and CE cost')}<div class="wrap"><table><thead><tr><th>Deductible</th><th>Premium</th><th>Expected out-of-pocket</th><th>Expected total</th><th>CE cost</th><th>Maximum out-of-pocket</th></tr></thead><tbody>${rows}</tbody></table></div>${img(3, 'Most you could pay')}<h3>Total cost if my bills are…</h3><p>${(() => { const row = practiceRow(c.result); const b = state.checks.bills; return b.every(Number.isFinite) ? `My calculation for ${money(row.deductible)}: ${BILLS.map((x, i) => `${money(x)} → ${money(b[i])} ${billRight(b[i], row, x) ? '(correct)' : `(should be ${money(billAnswer(row, x))})`}`).join('; ')}.` : 'My calculation: not done.'; })()}</p><p class="small">Premium plus out of pocket for one year; lowest in each column in bold.</p><div class="wrap"><table><thead><tr><th>Deductible</th>${BILLS.map(b => `<th>${money(b)}</th>`).join('')}</tr></thead><tbody>${scenarioRows(c.result.rows, true)}</tbody></table></div><p>Risk premium task: ${Number.isFinite(state.tasks.riskPremium) ? money(state.tasks.riskPremium, 2) : 'not answered'} (model: ${money(c.result.best[0].riskPremium, 2)}).</p>
+<h2>Result</h2>${(() => { const k = comparison(c.result); return k ? `<h3>${esc(k.title)}</h3><p><strong>${esc(k.lead)}</strong></p><div class="wrap">${k.table}</div><p>${esc(k.body)}</p>` : ''; })()}${img(2, 'Expected cost and CE cost')}<div class="wrap"><table><thead><tr><th>Deductible</th><th>Premium</th><th>Expected out-of-pocket</th><th>Expected total</th><th>CE cost</th><th>Maximum out-of-pocket</th></tr></thead><tbody>${rows}</tbody></table></div>${img(3, 'Most you could pay')}<h3>Total cost if my bills are…</h3><p>${(() => { const row = practiceRow(c.result); const b = state.checks.bills; return b.every(Number.isFinite) ? `My calculation for ${money(row.deductible)}: ${BILLS.map((x, i) => `${money(x)} → ${money(b[i])} ${billRight(b[i], row, x) ? '(correct)' : `(should be ${money(billAnswer(row, x))})`}`).join('; ')}.` : 'My calculation: not done.'; })()}</p><p class="small">Premium plus out of pocket for one year; lowest in each column in bold.</p><div class="wrap"><table><thead><tr><th>Deductible</th>${BILLS.map(b => `<th>${money(b)}</th>`).join('')}</tr></thead><tbody>${scenarioRows(c.result.rows, true)}</tbody></table></div><p>Risk premium task: ${Number.isFinite(state.tasks.riskPremium) ? money(state.tasks.riskPremium, 2) : 'not answered'} (model: ${money(c.result.best[0].riskPremium, 2)}).</p>
 <h2>What would change it</h2>${settings}${img(4, 'Recommendation map')}<p>${M.DEDUCTIBLES.map((f, i) => `<span style="color:${COLORS[i]}">■</span> ${money(f)}`).join(' &nbsp; ')}</p><p>W: ${esc(wealthSentence(w))} ${esc(sw)}</p><p>γ task: ${Number.isFinite(state.tasks.flipGamma) ? gammaText(state.tasks.flipGamma) : 'not answered'}.</p>
 ${Object.entries(REFLECTIONS).map(([key, label]) => `<h2>${label}</h2><p class="reflection">${esc(state.reflections[key] || 'No answer.')}</p>`).join('')}
 <h2>Model</h2><p class="small">Cost = premium + min(L, d) + min(10% × (L − d), CHF 700). The model picks the deductible with the highest expected CRRA utility of W minus this cost; CE cost = W − u⁻¹(expected utility). Risk questions: Barsky et al. (1997), Kimball et al. (2008). Standard adult cost-sharing only; care use is the same for every deductible.</p>
