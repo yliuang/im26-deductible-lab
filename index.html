@@ -1265,6 +1265,36 @@ return Plotly;
     };
   }
 
+  // Captions that walk through the student's own numbers.
+  function costCaptions(result) {
+    const rows = result.rows; const lo = rows[0]; const hi = rows.at(-1);
+    const best = result.best[0]; const cheap = result.cheapest[0];
+    const d = r => money(r.deductible);
+    const noRisk = rows.every(r => Math.abs(r.riskPremium) < .5);
+    if (rows.length < 2) return { average: `Only ${d(lo)} is left: premium plus expected out-of-pocket cost is ${money(lo.expectedCost)}.`, gap: '', max: '' };
+    const premiumDrop = lo.premium - hi.premium; const oopRise = hi.expectedOOP - lo.expectedOOP;
+    const same = best.deductible === cheap.deductible;
+    const average = [
+      `Each bar is what you expect to pay in a year: the premium (dark) plus the expected out-of-pocket cost (light).`,
+      premiumDrop > oopRise ? `From ${d(lo)} to ${d(hi)}, the premium falls by ${money(premiumDrop)} while the expected out-of-pocket cost rises by only ${money(oopRise)}, so on expected cost alone ${d(cheap)} is cheapest.` : `On expected cost alone, ${d(cheap)} is cheapest.`,
+      noRisk ? `With γ = 0 there is no charge for risk, so each dot (the CE cost) sits on top of its bar and the model picks ${d(best)}.`
+        : `But a higher deductible also makes your bills less predictable. Each dot, the CE cost, adds a charge for that risk: ${money(lo.riskPremium)} at ${d(lo)}, ${money(hi.riskPremium)} at ${d(hi)}.`,
+      noRisk ? '' : same ? `Even with this charge, ${d(best)} has the lowest dot, so risk aversion does not change the choice.`
+        : `With your γ, the dot is lowest at ${d(best)} (${money(best.ce)}): the premium saved by going higher no longer pays for the extra risk.`,
+      noRisk ? '' : `On this scale the gaps between the dots are hard to see; “Difference from the best” shows them.`
+    ].filter(Boolean).join(' ');
+    const gap = [
+      `Each bar shows how much more a deductible costs than the best one. Green: expected cost above the cheapest option, ${d(cheap)}. Orange: CE cost above the recommended option, ${d(best)}. A missing bar marks the winner.`,
+      same ? `Here both measures pick ${d(best)}.`
+        : `Choosing ${d(cheap)} instead of ${d(best)} would save ${money(best.expectedCost - cheap.expectedCost)} of expected cost, but add ${money(cheap.riskPremium - best.riskPremium)} of risk charge: on balance it is worth ${money(cheap.ce - best.ce)} a year less to you.`
+    ].join(' ');
+    const max = [
+      `Light bars: the most you could pay out of pocket in a bad year, the deductible plus CHF 700. Dots: what you expect to pay out of pocket. Premiums come on top.`,
+      `In a bad year, ${d(hi)} costs up to ${money(hi.maximumOOP - lo.maximumOOP)} more out of pocket than ${d(lo)}; in an expected year the difference is only ${money(oopRise)}. This gap between the bad year and the expected year is what risk aversion weighs against ${premiumDrop > 0 ? `the premium saving of ${money(premiumDrop)}` : 'the premium difference'}.`
+    ].join(' ');
+    return { average, gap, max };
+  }
+
   function costFigure(view, snap = cached) {
     const rows = snap.result.rows; const cats = rows.map(r => 'F' + r.deductible);
     const current = Number(state.current);
@@ -1273,20 +1303,21 @@ return Plotly;
     const xaxis = { type: 'category', categoryorder: 'array', categoryarray: cats, tickvals: cats, ticktext: ticks, title: { text: 'Deductible', standoff: 14 }, fixedrange: true, showgrid: false };
     const layout = { ...baseLayout, height: narrow() ? 420 : 420, margin: { l: 70, r: 12, t: 50, b: 80 }, legend: { orientation: 'h', x: 0, y: 1.14, traceorder: 'normal', font: { size: 11 } }, xaxis };
     const bestSet = new Set(snap.result.best.map(r => r.deductible));
+    const text = costCaptions(snap.result);
     if (view === 'gap') {
       const bestCE = Math.min(...rows.map(r => r.ce)); const bestE = Math.min(...rows.map(r => r.expectedCost));
-      return { caption: 'How much more each deductible costs than the best one, with and without the charge for risk.', data: [
+      return { caption: text.gap, data: [
         { type: 'bar', name: 'CE cost above the best', x: cats, y: rows.map(r => r.ce - bestCE), marker: { color: '#c9853b' }, hovertemplate: 'CHF %{y:,.0f}<extra></extra>' },
         { type: 'bar', name: 'Expected cost above the cheapest', x: cats, y: rows.map(r => r.expectedCost - bestE), marker: { color: '#99baa5' }, hovertemplate: 'CHF %{y:,.0f}<extra></extra>' }
       ], layout: { ...layout, barmode: 'group', bargap: .35, yaxis: { title: { text: 'CHF per year', standoff: 8 }, rangemode: 'tozero', fixedrange: true, gridcolor: '#dfe4dc', tickformat: ',.0f' } } };
     }
     if (view === 'max') {
-      return { caption: 'Bars: the most you could pay out of pocket in one year (deductible plus CHF 700). Dots: the expected out-of-pocket cost. Premiums come on top.', data: [
+      return { caption: text.max, data: [
         { type: 'bar', name: 'Maximum out-of-pocket', x: cats, y: rows.map(r => r.maximumOOP), marker: { color: '#c7d8ce' }, hovertemplate: 'At most CHF %{y:,.0f}<extra></extra>' },
         { type: 'scatter', mode: 'markers', name: 'Expected out-of-pocket', x: cats, y: rows.map(r => r.expectedOOP), marker: { color: '#195847', size: 11 }, hovertemplate: 'Expected CHF %{y:,.0f}<extra></extra>' }
       ], layout: { ...layout, bargap: .45, yaxis: { title: { text: 'CHF per year', standoff: 8 }, rangemode: 'tozero', fixedrange: true, gridcolor: '#dfe4dc', tickformat: ',.0f' } } };
     }
-    return { caption: 'Bars: premium plus expected out-of-pocket cost. Dots: CE cost, which adds a charge for risk. The model picks the lowest dot.', data: [
+    return { caption: text.average, data: [
       { type: 'bar', name: 'Premium', x: cats, y: rows.map(r => r.premium), marker: { color: '#2d6b55' }, hovertemplate: 'Premium CHF %{y:,.0f}<extra></extra>' },
       { type: 'bar', name: 'Expected out-of-pocket', x: cats, y: rows.map(r => r.expectedOOP), marker: { color: '#99baa5' }, hovertemplate: 'Out-of-pocket CHF %{y:,.0f}<extra></extra>' },
       { type: 'scatter', mode: 'markers', name: 'CE cost', x: cats, y: rows.map(r => r.ce), marker: { color: rows.map(r => bestSet.has(r.deductible) ? '#c9853b' : '#e3c29c'), size: 12, line: { color: '#fff', width: 2 } }, hovertemplate: 'CE cost CHF %{y:,.0f}<extra></extra>' }
