@@ -309,6 +309,10 @@ dialog{padding:22px}
 .comparison table{width:100%}
 .comparison .table-wrap{margin-bottom:12px}
 .row-tag{font-size:12px;color:var(--muted);margin-left:4px}
+.explore-tasks .task-question{margin:0 0 12px;max-width:760px;font-weight:600;font-size:15px}
+.explore-tasks .field-row{align-items:center}
+.explore-tasks .field.narrow{flex:0 0 160px}
+.explore-tasks #task-flip-feedback{max-width:760px}
 
 </style>
 </head>
@@ -436,7 +440,7 @@ dialog{padding:22px}
             <ul id="switch-list" class="switch-list"></ul>
           </div>
         </div>
-        <div class="task explore-tasks"><div class="field-row"><label class="field" id="task-flip-field"><span id="task-flip-label"></span><input type="number" id="task-flip" min="0" max="20" step="0.05"></label><button class="button" data-task="flip">Check</button></div><p id="task-flip-feedback" class="small" aria-live="polite"></p></div>
+        <div class="task explore-tasks"><p id="task-flip-label" class="task-question"></p><div class="field-row"><label class="field narrow" id="task-flip-field"><span class="sr-only">γ</span><input type="number" id="task-flip" min="0" max="20" step="0.05" placeholder="γ"></label><button class="button" data-task="flip">Check</button></div><p id="task-flip-feedback" class="small" aria-live="polite"></p></div>
       </div>
       <div class="page-bottom"><button class="button quiet" data-go="5">← Result</button><button class="button primary" data-go="7">Your decision →</button></div>
     </section>
@@ -446,11 +450,11 @@ dialog{padding:22px}
         <div class="page-heading"><h1 id="decision-title">Your decision</h1><p id="decision-summary" class="lead"></p></div>
         <div class="reflection-fields">
           <label class="field">Why did you choose your current deductible? If you are not in Swiss basic insurance, which deductible would you choose, and why?<textarea id="reflection-current" rows="5"></textarea></label>
-          <label class="field"><span id="self-risk-gamma"></span> Does this reflect how you see your own attitude to risk when it comes to your health and healthcare costs? Why or why not?<textarea id="reflection-selfRisk" rows="5"></textarea></label>
+          <label class="field"><span id="self-risk-gamma"></span><textarea id="reflection-selfRisk" rows="5"></textarea></label>
           <label class="field">With the example premiums, a risk-neutral person (γ = 0) is never recommended a deductible in between, such as CHF 1,000 or CHF 1,500: always CHF 300 or CHF 2,500. Why? (Try γ = 0 on the What if page.)<textarea id="reflection-corners" rows="5"></textarea></label>
           <label class="field">Would you follow the model's recommendation? Why or why not?<textarea id="reflection-choice" rows="5"></textarea></label>
           <label class="field">Which input are you least sure about: γ, the budget W or your cost chances? Would a realistic change flip the result?<textarea id="reflection-uncertainty" rows="5"></textarea></label>
-          <label class="field">What does the model leave out?<textarea id="reflection-omitted" rows="5"></textarea></label>
+          <label class="field">The model compares only money: the premium and the bills you might pay, weighed by your risk aversion. Name at least two other things that matter for your choice of deductible but are not in the model. For each, would it push you towards a higher or a lower deductible?<textarea id="reflection-omitted" rows="6"></textarea></label>
         </div>
         <div class="export-panel"><p>Download your report with your calculations and reflections. Open it, choose “Print / save as PDF”, and upload the PDF to Canvas.</p><button class="button primary" id="export-report">Download my report ↓</button></div><p id="export-status" class="small" role="status" aria-live="polite"></p>
       </div>
@@ -1097,7 +1101,7 @@ return Plotly;
   const TOP_COST = 15000;
   const PAGE_NAMES = ['Start', 'Risk attitude', 'Your risk aversion', 'Healthcare costs', 'Premiums', 'Result', 'What if', 'Your decision'];
   const STORAGE_KEY = 'deductible-lab-progress';
-  const REFLECTIONS = { current: 'Why my current deductible', selfRisk: 'Measured and self-perceived risk attitude', corners: 'Why risk neutrality picks CHF 300 or CHF 2,500', choice: 'Would you follow the recommendation?', uncertainty: 'Least certain input', omitted: 'What the model leaves out' };
+  const REFLECTIONS = { current: 'Why my current deductible', selfRisk: 'Risk attitude in health compared with the measured γ', corners: 'Why risk neutrality picks CHF 300 or CHF 2,500', choice: 'Would you follow the recommendation?', uncertainty: 'Least certain input', omitted: 'What the model leaves out (at least two things)' };
   // "Current deductible" value for students outside Swiss basic insurance (home insurance or exemption).
   const NOT_INSURED = 'none';
   // `gamma` and `wealth` are the student's answers. `explore` holds the What if changes; null means "as in my answers".
@@ -1541,9 +1545,17 @@ return Plotly;
     $('switch-list').innerHTML = `<li><strong>Money you can draw on:</strong> ${esc(wealthSentence(whatIf))}</li><li>${esc(chance)}</li>`;
   }
 
+  // The measured γ in francs: what a sure amount would be given up to avoid a 50–50 income gamble (same gamble as the utility chart).
+  function selfRiskText(rr) {
+    const W = Number.isFinite(state.wealth) && state.wealth > 0 ? state.wealth : 10000;
+    const stake = Math.min(2000, W / 2); const low = W - stake; const high = W + stake; const g = rr.gamma;
+    const ce = Math.abs(g - 1) < 1e-9 ? Math.sqrt(low * high) : ((low ** (1 - g) + high ** (1 - g)) / 2) ** (1 / (1 - g));
+    return `The risk questions asked about job income. They put your γ ${rangeText(rr)}: for example, with γ = ${gammaText(g)}, a 50–50 chance of ${money(low)} or ${money(high)} is worth only as much to you as ${money(ce)} for sure. When it comes to your health and healthcare costs, are you more careful, less careful, or about the same? Why?`;
+  }
+
   function renderDecision() {
     const rr = riskResult();
-    $('self-risk-gamma').textContent = rr ? `The risk questions put your γ ${rangeText(rr)}.` : 'You skipped the risk questions.';
+    $('self-risk-gamma').textContent = rr ? selfRiskText(rr) : 'You skipped the risk questions. When it comes to your health and healthcare costs, how careful are you about risk? Why?';
     const pick = cached && revealed() ? picks(cached.result) : null;
     $('decision-summary').textContent = (pick ? `The model recommends ${pick}.` : 'See the result first.') + (state.current === NOT_INSURED ? ' You are not in Swiss basic insurance at the moment.' : state.current ? ` Your current deductible is ${money(Number(state.current))}.` : '');
     const ready = Boolean(cached) && revealed();
@@ -1618,7 +1630,7 @@ return Plotly;
     if (!whatIf) return;
     const { regions, first } = flipRegions(whatIf);
     $('task-flip-label').textContent = first ? `Set γ to 0 and slide it up, keeping W and the chance of high costs as they are. At what γ does the model stop recommending ${money(regions[0].deductible)}?` : `With these settings the model recommends ${money(regions[0].deductible)} for every γ from 0 to 20, so moving γ alone changes nothing.`;
-    $('task-flip').hidden = !first; document.querySelector('[data-task="flip"]').hidden = !first;
+    document.querySelector('.explore-tasks .field-row').hidden = !first;
   }
   function checkTask(kind) {
     const snap = whatIf;
