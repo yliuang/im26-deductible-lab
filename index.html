@@ -427,17 +427,16 @@ dialog{padding:22px}
             <label class="slider-field" for="gamma-explore"><span>Risk aversion γ</span><strong id="gamma-explore-value"></strong><input id="gamma-explore" type="range" min="0" max="20" step="0.05"></label>
             <label class="field">Money you can draw on, W (CHF)<input type="number" id="wealth-explore" min="1" max="10000000" step="1000"></label>
             <label class="slider-field" for="high-prob"><span>Chance of costs above CHF 10,000</span><strong id="high-prob-value"></strong><input id="high-prob" type="range" min="0" max="100" step="0.5"><small>The other ranges keep their relative weights.</small></label>
-            <label class="slider-field" for="cost-scale"><span>Scale all costs</span><strong id="cost-scale-value"></strong><input id="cost-scale" type="range" min="0.25" max="3" step="0.05"></label>
             <button class="button full" id="restore-initial">Back to my answers</button>
           </aside>
           <div class="chart-section">
-            <div class="chart-title"><h2>Recommendation map</h2><p>Each colour is the recommended deductible for a combination of γ and the chance of high costs. The cross marks your current inputs; the dashed box is the γ range from your answers.</p></div>
+            <div class="chart-title"><h2>Recommendation map</h2><p>Each colour is the recommended deductible for a combination of γ and the chance of high costs. The cross marks your current inputs.</p></div>
             <div id="switch-chart" class="chart" role="img" aria-label="Recommended deductible by risk aversion and the chance of high costs"></div>
             <div id="map-legend" class="map-legend"></div>
             <ul id="switch-list" class="switch-list"></ul>
           </div>
         </div>
-        <div class="task explore-tasks"><div class="field-row"><label class="field">Move only γ. At what γ does the recommendation change?<input type="number" id="task-flip" min="0" max="20" step="0.05"></label><button class="button" data-task="flip">Check</button></div><p id="task-flip-feedback" class="small" aria-live="polite"></p></div>
+        <div class="task explore-tasks"><div class="field-row"><label class="field" id="task-flip-field"><span id="task-flip-label"></span><input type="number" id="task-flip" min="0" max="20" step="0.05"></label><button class="button" data-task="flip">Check</button></div><p id="task-flip-feedback" class="small" aria-live="polite"></p></div>
       </div>
       <div class="page-bottom"><button class="button quiet" data-go="5">← Result</button><button class="button primary" data-go="7">Your decision →</button></div>
     </section>
@@ -1197,10 +1196,14 @@ return Plotly;
   }
 
 
-  function wealthText(regions) {
+  // How the recommendation depends on W, at the γ in use. W must cover the worst case of every deductible, so the regions start there.
+  function wealthText(regions, gamma) {
     const round = x => money(Math.round(x / 100) * 100);
-    if (regions.length === 1) return `${money(regions[0].deductible)} for any W above ${round(regions[0].from)}.`;
-    return regions.map((r, i) => i === 0 ? `${money(r.deductible)} if W is below ${round(r.to)}` : i === regions.length - 1 ? `${money(r.deductible)} above` : `${money(r.deductible)} up to ${round(r.to)}`).join('; ') + '.';
+    const g = `With γ = ${gammaText(gamma)}`;
+    if (regions.length === 1) return `${g}, W does not change the recommendation: it is ${money(regions[0].deductible)} for every W the model can use (above ${round(regions[0].from)}, enough to pay the worst case of every deductible).`;
+    const parts = regions.map((r, i) => i === 0 ? `${money(r.deductible)} if W is below ${round(r.to)}` : i === regions.length - 1 ? `${money(r.deductible)} above ${round(r.from)}` : `${money(r.deductible)} from ${round(r.from)} to ${round(r.to)}`);
+    const why = regions[0].deductible < regions.at(-1).deductible ? ' With less money to draw on, a bad year hurts more, so a lower deductible is safer.' : '';
+    return `${g}, the recommendation depends on W: ${parts.join('; ')}.${why}`;
   }
 
   function bandText(inps) {
@@ -1219,7 +1222,7 @@ return Plotly;
     const result = best(inps);
     // The recommendation at W = 100,000, shown only when it differs from the current one.
     const rich = regions.length > 1 ? best(inps, 100000).best : null;
-    return { ...inps, result, sw: M.probabilitySwitchCRRA(inps.costs, inps.probabilities, inps.premiums, inps.gamma, inps.wealth, inps.offered), wealthLine: wealthText(regions), rich: rich && rich[0].deductible !== result.best[0].deductible ? rich : null };
+    return { ...inps, result, sw: M.probabilitySwitchCRRA(inps.costs, inps.probabilities, inps.premiums, inps.gamma, inps.wealth, inps.offered), wealthLine: wealthText(regions, inps.gamma), rich: rich && rich[0].deductible !== result.best[0].deductible ? rich : null };
   }
 
   function describe(error, page) {
@@ -1377,7 +1380,7 @@ return Plotly;
     const band = r ? [r.low, Math.min(20, r.high)] : null;
     const hm = M.heatmapCRRA(snap.costs, snap.probabilities, snap.premiums, snap.offered, snap.wealth, snap.gamma, { xMax, gammaMax: band?.[1] });
     const scale = COLORS.flatMap((c, i) => [[i / 6, c], [(i + 1) / 6, c]]);
-    const shapes = band ? [{ type: 'rect', x0: 0, x1: xMax, y0: band[0], y1: band[1], fillcolor: 'rgba(0,0,0,0)', line: { color: '#fff', width: 1.5, dash: 'dash' } }] : [];
+    const shapes = [];
     return {
       data: [
         { type: 'heatmap', x: hm.xs, y: hm.ys, z: hm.z, zmin: -.5, zmax: 5.5, colorscale: scale, showscale: false, customdata: hm.z.map(row => row.map(i => M.DEDUCTIBLES[i])), hovertemplate: 'Chance: %{x:.0f}%<br>γ: %{y:.2f}<br>CHF %{customdata}<extra></extra>' },
@@ -1528,15 +1531,14 @@ return Plotly;
     if (document.activeElement !== $('wealth-explore')) $('wealth-explore').value = Number.isFinite(e.wealth ?? state.wealth) ? e.wealth ?? state.wealth : '';
     $('high-prob').value = high * 100;
     $('high-prob-value').textContent = number(high * 100) + '%';
-    $('cost-scale').value = e.scale;
-    $('cost-scale-value').textContent = number(e.scale, 2) + '×';
     $('restore-initial').disabled = !changed();
     $('whatif-body').hidden = !revealed();
     $('whatif-pick').textContent = whatIf ? picks(whatIf.result) + (whatIf.result.excluded.length ? '. ' + leftOutText(whatIf.result.excluded, whatIf.wealth) : '') : (whatIfProblem || problem)?.text ?? '';
     if (!whatIf) { $('switch-list').innerHTML = ''; return; }
     const sw = whatIf.sw;
-    const chance = `Chance of ${HIGH} (now ${number(high * 100)}%): ` + (sw ? `the result changes at about ${number(sw.probability * 100, 1)}%.` : 'no change between 0% and 100%.');
-    $('switch-list').innerHTML = `<li><strong>W:</strong> ${esc(wealthSentence(whatIf))}</li><li>${esc(chance)}</li>`;
+    const chance = `Chance of ${HIGH} (now ${number(high * 100)}%): ` + (sw ? `the recommendation changes at about ${number(sw.probability * 100, 1)}%.` : 'the recommendation stays the same for any chance from 0% to 100%.');
+    renderFlipTask();
+    $('switch-list').innerHTML = `<li><strong>Money you can draw on:</strong> ${esc(wealthSentence(whatIf))}</li><li>${esc(chance)}</li>`;
   }
 
   function renderDecision() {
@@ -1607,6 +1609,17 @@ return Plotly;
   }
 
   // ---------- Tasks ----------
+  // γ regions at the What if settings, from γ = 0 up.
+  function flipRegions(snap) {
+    const regions = M.gammaRegions(snap.costs, snap.probabilities, snap.premiums, snap.offered, snap.wealth, 0, 20);
+    return { regions, first: regions[1]?.from ?? null };
+  }
+  function renderFlipTask() {
+    if (!whatIf) return;
+    const { regions, first } = flipRegions(whatIf);
+    $('task-flip-label').textContent = first ? `Set γ to 0 and slide it up, keeping W and the chance of high costs as they are. At what γ does the model stop recommending ${money(regions[0].deductible)}?` : `With these settings the model recommends ${money(regions[0].deductible)} for every γ from 0 to 20, so moving γ alone changes nothing.`;
+    $('task-flip').hidden = !first; document.querySelector('[data-task="flip"]').hidden = !first;
+  }
   function checkTask(kind) {
     const snap = whatIf;
     if (!snap) return;
@@ -1614,15 +1627,13 @@ return Plotly;
     const feedback = $('task-flip-feedback');
     const value = input.value === '' ? NaN : Number(input.value);
     if (kind === 'flip') {
-      const regions = M.gammaRegions(snap.costs, snap.probabilities, snap.premiums, snap.offered, snap.wealth, 0, 20);
-      const bounds = regions.slice(1).map(r => r.from);
+      const { regions, first } = flipRegions(snap);
       state.tasks.flipGamma = Number.isFinite(value) ? value : null;
-      if (!bounds.length) feedback.textContent = `No change: ${money(regions[0].deductible)} for every γ from 0 to 20.`;
+      if (!first) feedback.textContent = '';
       else if (!Number.isFinite(value)) feedback.textContent = 'Enter a number.';
       else {
-        const nearest = bounds.reduce((b, x) => Math.abs(x - value) < Math.abs(b - value) ? x : b);
-        const k = bounds.indexOf(nearest);
-        feedback.textContent = Math.abs(nearest - value) <= Math.max(.1, .03 * nearest) ? `Correct: at about γ = ${gammaText(nearest)} it changes from ${money(regions[k].deductible)} to ${money(regions[k + 1].deductible)}.` : `Not quite. Try a ${nearest > value ? 'higher' : 'lower'} γ.`;
+        const right = Math.abs(first - value) <= Math.max(.1, .03 * first);
+        feedback.textContent = `${right ? 'Correct' : `The answer is γ = ${gammaText(first)}`}: below γ = ${gammaText(first)} the model recommends ${money(regions[0].deductible)}, above it ${money(regions[1].deductible)}. A more risk-averse person accepts a higher expected cost for a more predictable one.`;
       }
     }
     persist();
@@ -1673,7 +1684,7 @@ return Plotly;
       next.exampleShown = raw.exampleShown === true || next.beliefSource === 'example';
       const e = raw.explore ?? {};
       const orNull = (x, lo, hi) => x === null || x === undefined ? null : finiteIn(x, lo, hi);
-      next.explore = { gamma: orNull(e.gamma, 0, 20), wealth: orNull(e.wealth, 1, 10000000), high: orNull(e.high, 0, 1), scale: finiteIn(e.scale, .25, 3) ?? 1 };
+      next.explore = { gamma: orNull(e.gamma, 0, 20), wealth: orNull(e.wealth, 1, 10000000), high: orNull(e.high, 0, 1), scale: 1 };
     }
     next.priceMode = raw.priceMode === 'personal' ? 'personal' : 'example';
     next.quoteYear = Number.isInteger(raw.quoteYear) && raw.quoteYear >= 2020 && raw.quoteYear <= 2100 ? raw.quoteYear : 2027;
@@ -1721,7 +1732,7 @@ return Plotly;
       const rows = numberRows(c.result);
       const sw = w.sw ? `The result changes at a ${number(w.sw.probability * 100, 1)}% chance of ${HIGH}.` : `The result does not change with the chance of ${HIGH}.`;
       const e = state.explore;
-      const settings = whatIf && changed() ? `<p>What if settings when downloading: γ = ${gammaText(w.gamma)}, W = ${money(w.wealth)}, chance of ${HIGH} ${number(w.binProbabilities.at(-1) * 100, 1)}%, costs × ${number(e.scale, 2)}. Recommendation with these settings: ${picks(w.result)}.</p>` : '';
+      const settings = whatIf && changed() ? `<p>What if settings when downloading: γ = ${gammaText(w.gamma)}, W = ${money(w.wealth)}, chance of ${HIGH} ${number(w.binProbabilities.at(-1) * 100, 1)}%. Recommendation with these settings: ${picks(w.result)}.</p>` : '';
       const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My deductible decision</title><style>body{font:16px/1.6 system-ui;color:#203a33;max-width:1000px;margin:35px auto;padding:25px}h1{font-size:36px;font-weight:500}h2{margin-top:34px;font-size:23px}img{width:100%}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #d7dfd8;padding:9px;text-align:right}td:first-child,th:first-child{text-align:left}.reflection{white-space:pre-wrap}.small{font-size:13px;color:#64756e}button{padding:10px 18px;background:#195847;color:white;border:0;border-radius:6px}.wrap{overflow:auto}pre{white-space:pre-wrap}@media print{body{margin:0;padding:10px}button{display:none}img{break-inside:avoid}h2{break-after:avoid}}</style></head><body><button onclick="window.print()">Print / save as PDF</button>
 <h1>My deductible decision</h1><p class="small">Insurance Management · ${new Date().toISOString().slice(0, 10)}</p>
 <p><strong>Model recommendation with my answers:</strong> ${picks(c.result)}.${c.result.excluded.length ? ' ' + esc(leftOutText(c.result.excluded, c.wealth)) : ''}${c.richer ? ` With W = CHF 100,000 the model would recommend ${c.richer.map(x => money(x.deductible)).join(' / ')}.` : ''} <strong>Lowest expected cost:</strong> ${c.result.cheapest.map(x => money(x.deductible)).join(' / ')}.</p>
@@ -1731,7 +1742,7 @@ ${state.legacyRisk ? `<details><summary>Answers from the earlier version</summar
 <h2>Healthcare costs</h2><p>Chances${state.beliefSource === 'example' ? ' (example values, unchanged)' : state.exampleShown ? ' (my own, after seeing the example values)' : ' (my own, without the example values)'}: ${RANGES.map((x, i) => `${x}: ${number(state.probs[i])}%`).join('; ')}.</p>${img(1, 'Cost chances')}
 <h2>Premiums</h2><p>${state.priceMode === 'example' ? `Example premiums: 2027, ${youngAdult() ? 'young adults (19 to 25)' : 'adults (26 and older)'}, a mid-priced insurer in the city of St. Gallen, standard model with accident cover.` : `My quotes for ${state.quoteYear}.`}${warnings.length ? ' Checks: ' + esc(warnings.join(' ')) : ''}</p>
 <h2>Result</h2>${(() => { const k = comparison(c.result); return k ? `<h3>${esc(k.title)}</h3><p><strong>${esc(k.lead)}</strong></p><div class="wrap">${k.table}</div><p>${esc(k.body)}</p>` : ''; })()}${img(2, 'Expected cost and CE cost')}<div class="wrap"><table><thead><tr><th>Deductible</th><th>Premium</th><th>+ Expected out-of-pocket</th><th>= Expected total</th><th>+ Charge for risk</th><th>= CE cost</th><th>Most out of pocket</th></tr></thead><tbody>${rows}</tbody></table></div>${img(3, 'Most you could pay')}<h3>Total cost if my bills are…</h3><p>${(() => { const row = practiceRow(c.result); const b = state.checks.bills; return b.every(Number.isFinite) ? `My calculation for ${money(row.deductible)}: ${BILLS.map((x, i) => `${money(x)} → ${money(b[i])} ${billRight(b[i], row, x) ? '(correct)' : `(should be ${money(billAnswer(row, x))})`}`).join('; ')}.` : 'My calculation: not done.'; })()}</p><p class="small">Premium plus out of pocket for one year; lowest in each column in bold.</p><div class="wrap"><table><thead><tr><th>Deductible</th>${BILLS.map(b => `<th>${money(b)}</th>`).join('')}</tr></thead><tbody>${scenarioRows(c.result.rows, true)}</tbody></table></div>
-<h2>What would change it</h2>${settings}${img(4, 'Recommendation map')}<p>${M.DEDUCTIBLES.map((f, i) => `<span style="color:${COLORS[i]}">■</span> ${money(f)}`).join(' &nbsp; ')}</p><p>W: ${esc(wealthSentence(w))} ${esc(sw)}</p><p>γ task: ${Number.isFinite(state.tasks.flipGamma) ? gammaText(state.tasks.flipGamma) : 'not answered'}.</p>
+<h2>What would change it</h2>${settings}${img(4, 'Recommendation map')}<p>${M.DEDUCTIBLES.map((f, i) => `<span style="color:${COLORS[i]}">■</span> ${money(f)}`).join(' &nbsp; ')}</p><p>W: ${esc(wealthSentence(w))} ${esc(sw)}</p>${(() => { const f = flipRegions(w); return f.first ? `<p>γ at which the model stops recommending ${money(f.regions[0].deductible)}: my answer ${Number.isFinite(state.tasks.flipGamma) ? gammaText(state.tasks.flipGamma) : 'not given'}; model ${gammaText(f.first)}.</p>` : ''; })()}
 ${Object.entries(REFLECTIONS).map(([key, label]) => `<h2>${label}</h2><p class="reflection">${esc(state.reflections[key] || 'No answer.')}</p>`).join('')}
 <h2>Model</h2><p class="small">Cost = premium + min(L, d) + min(10% × (L − d), CHF 700). The model picks the deductible with the highest expected CRRA utility of W minus this cost; CE cost = W − u⁻¹(expected utility). Risk questions: Barsky et al. (1997), Kimball et al. (2008). Standard adult cost-sharing only; care use is the same for every deductible.</p>
 <p class="small">For a next-year reduction of deductible, notify the insurer by 30 November; raising it has a later deadline.</p></body></html>`;
@@ -1801,7 +1812,6 @@ ${Object.entries(REFLECTIONS).map(([key, label]) => `<h2>${label}</h2><p class="
   $('check-scenarios').addEventListener('click', checkScenarios);
   $('scenario-inputs').addEventListener('input', e => { const i = e.target.dataset.bill; if (i === undefined) return; state.checks.bills[Number(i)] = e.target.value === '' ? null : Number(e.target.value); persist(); });
   $('high-prob').addEventListener('input', e => { state.explore.high = Number(e.target.value) / 100; refresh(); });
-  $('cost-scale').addEventListener('input', e => { state.explore.scale = Number(e.target.value); refresh(); });
   $('restore-initial').addEventListener('click', () => { state.explore = noChanges(); refresh(); });
   for (const key of Object.keys(state.reflections)) $('reflection-' + key).addEventListener('input', e => { state.reflections[key] = e.target.value; persist(); });
 
