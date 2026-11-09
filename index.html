@@ -176,6 +176,7 @@ th{text-align:right;font-weight:600;color:var(--muted)}
 th:first-child,td:first-child{text-align:left}
 th,td{padding:12px 9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 tr.recommended{background:var(--green-soft)}
+tr.current td:first-child{font-weight:600}
 .formula-note{margin-top:25px;font-size:13px}
 .formula-note h3{font-size:15px}
 .reflection-fields{display:grid;grid-template-columns:1fr;gap:26px;max-width:850px}
@@ -300,6 +301,10 @@ dialog{padding:22px}
 #results-validation .text-button{margin-left:6px}
 @media(max-width:800px){.costs-layout{grid-template-columns:1fr;gap:10px}}
 .wealth-note{color:var(--error);margin:8px 0 18px}
+.scenario-task{margin-top:34px}
+.scenario-task .field.narrow{flex:0 1 190px}
+#scenario-feedback ul{margin:6px 0 0;padding-left:20px}
+#scenario-full tr.current{background:var(--green-soft)}
 
 </style>
 </head>
@@ -327,7 +332,7 @@ dialog{padding:22px}
         <p class="lead">This is an exercise on choosing your health insurance deductible. You answer a few questions about risk and your expected healthcare costs, see which deductible a simple model would pick, and compare it with what you would choose yourself.</p>
         <p>The exercise is also an opportunity to reconsider your choice for next year. If you want to lower your deductible, your insurer must receive your notice by 30 November; raising it has a later deadline. Complete your comparison ahead of time, so we can discuss your reasoning in the tutorial on 30 November.</p>
         <p>If you are not in Swiss basic insurance, for example because you are an EU/EFTA/UK student covered at home or have an approved exemption, do the exercise as if you had a Swiss policy, using the example premiums.</p>
-        <div class="starting-point"><h2>You</h2><div class="field-row"><label class="field narrow">Your age<input type="number" id="age-input" min="19" max="120" step="1" inputmode="numeric"></label><label class="field">Current deductible<select id="current-deductible"><option value="">Prefer not to say / not applicable</option></select></label><label class="field">Planned for next year<select id="planned-deductible"><option value="">Not decided</option></select></label></div><p class="small muted">Optional. Your age sets the example premiums and healthcare costs; without it the examples are for a 22-year-old. Your answers are saved in this browser only.</p><p id="age-note" class="small wealth-note" role="status"></p></div>
+        <div class="starting-point"><h2>You</h2><div class="field-row"><label class="field narrow">Your age<input type="number" id="age-input" min="19" max="120" step="1" inputmode="numeric"></label><label class="field">Current deductible<select id="current-deductible"><option value="">Prefer not to say / not applicable</option></select></label></div><p class="small muted">Optional. Your age sets the example premiums and healthcare costs; without it the examples are for a 22-year-old. Your answers are saved in this browser only.</p><p id="age-note" class="small wealth-note" role="status"></p></div>
         <div class="intro-actions"><button class="button primary large" data-go="1">Start →</button></div>
       </div>
     </section>
@@ -385,17 +390,8 @@ dialog{padding:22px}
     <section class="page" data-page="5" hidden aria-labelledby="result-title">
       <div class="page-heading"><h1 id="result-title">Result</h1><p id="inputs-line" class="lead"></p></div>
       <div id="results-validation" role="alert" hidden></div>
-      <section id="results-gate" class="results-gate" aria-labelledby="gate-title" hidden>
-        <h2 id="gate-title">Before you see the result</h2>
-        <p>What would you pay out of pocket? First the deductible, then 10% of the rest, with the 10% part capped at CHF 700 a year.</p>
-        <div class="field-row"><label class="field narrow">Bill of CHF 4,000, deductible CHF 1,500 (CHF)<input type="number" id="oop-1" min="0" step="1"></label><label class="field narrow">Bill of CHF 12,000, deductible CHF 500 (CHF)<input type="number" id="oop-2" min="0" step="1"></label><button class="button" id="check-oop">Check</button></div>
-        <p id="oop-feedback" class="small" aria-live="polite"></p>
-        <div class="field-row"><label class="field">Which deductible do you think the model will recommend?<select id="prediction"><option value="">Choose…</option></select></label><button class="button primary" id="reveal-results">Show the result</button></div>
-        <p id="prediction-status" class="small" aria-live="polite"></p>
-      </section>
       <div id="results-body" hidden>
         <div class="result-summary" aria-live="polite"><div><p>The model recommends</p><strong id="recommended-value"></strong><span id="recommended-context"></span></div><div><p>Lowest expected cost</p><strong id="neutral-value"></strong><span id="neutral-context"></span></div></div>
-        <p id="prediction-note" class="small muted"></p>
         <p id="excluded-note" class="small wealth-note" hidden></p>
         <p id="wealth-sensitivity" class="small muted" hidden></p>
         <div class="chart-title"><h2>What does each deductible cost?</h2></div>
@@ -403,10 +399,17 @@ dialog{padding:22px}
         <p id="cost-chart-caption" class="chart-caption"></p>
         <div id="cost-chart" class="chart" role="img" aria-label="Cost of each deductible"></div>
         <div class="numbers">
-          <div class="chart-title"><h2>The numbers</h2></div>
+          <div class="chart-title"><h2>The numbers</h2><p>Out of pocket: first the deductible, then 10% of the rest, with the 10% part capped at CHF 700 a year.</p></div>
           <div class="table-wrap"><table><thead><tr><th>Deductible</th><th>Premium</th><th>Expected out-of-pocket</th><th>Expected total</th><th>CE cost</th><th>Maximum out-of-pocket</th></tr></thead><tbody id="results-table"></tbody></table></div>
           <p><strong>CE cost</strong> (certainty-equivalent cost): the fixed yearly amount you would find just as good as the uncertain cost of an option. It adds a charge for risk to the expected cost. <strong>Risk premium</strong>: CE cost minus expected total.</p>
           <div class="task"><div class="field-row"><label class="field">What is the risk premium of the recommended deductible? (CHF)<input type="number" id="task-premium" step="0.01"></label><button class="button" data-task="premium">Check</button></div><p id="task-premium-feedback" class="small" aria-live="polite"></p></div>
+          <div class="scenario-task" id="scenario-task">
+            <div class="chart-title"><h2>Your total cost if your bills are…</h2><p id="scenario-intro"></p></div>
+            <div class="field-row" id="scenario-inputs"></div>
+            <div class="section-actions"><button class="button" id="check-scenarios">Check</button></div>
+            <p id="scenario-feedback" class="small" aria-live="polite"></p>
+            <div id="scenario-full" hidden><p class="small muted">Every deductible: premium plus out of pocket for one year; the lowest in each column is in bold.</p><div class="table-wrap"><table><thead><tr><th>Deductible</th><th>Bills CHF 0</th><th>CHF 1,000</th><th>CHF 5,000</th><th>CHF 10,000</th></tr></thead><tbody id="scenario-table"></tbody></table></div></div>
+          </div>
           <p id="why-corners" class="small muted"><strong>Why only CHF 300 or CHF 2,500 without risk aversion?</strong> In the example premiums each extra franc of deductible saves about CHF 0.70 of premium, almost the largest discount the law allows, and adds at most one franc of expected out-of-pocket cost, less the higher the deductible. So for a risk-neutral person (γ = 0) the cheapest option is CHF 300 or CHF 2,500.</p>
         </div>
       </div>
@@ -415,7 +418,6 @@ dialog{padding:22px}
 
     <section class="page" data-page="6" hidden aria-labelledby="whatif-title">
       <div class="page-heading"><h1 id="whatif-title">What would change the result?</h1><p class="lead">Change one input at a time and watch the recommendation.</p></div>
-      <div id="whatif-gate" class="results-gate" hidden><p>See the result first.</p><button class="button primary" data-go="5">Go to the result</button></div>
       <div id="whatif-body">
         <div class="explorer-grid">
           <aside class="explorer-controls">
@@ -441,8 +443,9 @@ dialog{padding:22px}
     <section class="page" data-page="7" hidden aria-labelledby="decision-title">
       <div class="reading-flow">
         <div class="page-heading"><h1 id="decision-title">Your decision</h1><p id="decision-summary" class="lead"></p></div>
-        <label class="field decision-choice">Which deductible will you choose for next year?<select id="after-deductible"><option value="">Not decided</option></select></label>
         <div class="reflection-fields">
+          <label class="field">Why did you choose your current deductible? If you are not in Swiss basic insurance, which deductible would you choose, and why?<textarea id="reflection-current" rows="5"></textarea></label>
+          <label class="field"><span id="self-risk-gamma"></span> Does this reflect how you see your own attitude to risk when it comes to your health and healthcare costs? Why or why not?<textarea id="reflection-selfRisk" rows="5"></textarea></label>
           <label class="field">Would you follow the model's recommendation? Why or why not?<textarea id="reflection-choice" rows="5"></textarea></label>
           <label class="field">Which input are you least sure about: γ, the budget W or your cost chances? Would a realistic change flip the result?<textarea id="reflection-uncertainty" rows="5"></textarea></label>
           <label class="field">What does the model leave out?<textarea id="reflection-omitted" rows="5"></textarea></label>
@@ -1092,16 +1095,12 @@ return Plotly;
   const TOP_COST = 15000;
   const PAGE_NAMES = ['Start', 'Risk attitude', 'Your risk aversion', 'Healthcare costs', 'Premiums', 'Result', 'What if', 'Your decision'];
   const STORAGE_KEY = 'deductible-lab-progress';
-  const OOP_CHECKS = [
-    { id: 'oop-1', key: 'oop1', loss: 4000, deductible: 1500, label: 'First bill', right: '1,500 + 10% × 2,500 = 1,750', hint: 'Deductible first, then 10% of the rest.' },
-    { id: 'oop-2', key: 'oop2', loss: 12000, deductible: 500, label: 'Second bill', right: '500 + 700, because 10% × 11,500 is more than the cap', hint: 'Remember the CHF 700 cap.' }
-  ];
-  const REFLECTIONS = { choice: 'Would you follow the recommendation?', uncertainty: 'Least certain input', omitted: 'What the model leaves out' };
+  const REFLECTIONS = { current: 'Why my current deductible', selfRisk: 'Measured and self-perceived risk attitude', choice: 'Would you follow the recommendation?', uncertainty: 'Least certain input', omitted: 'What the model leaves out' };
   // "Current deductible" value for students outside Swiss basic insurance (home insurance or exemption).
   const NOT_INSURED = 'none';
   // `gamma` and `wealth` are the student's answers. `explore` holds the What if changes; null means "as in my answers".
   const noChanges = () => ({ gamma: null, wealth: null, high: null, scale: 1 });
-  const defaultState = () => ({ version: 6, page: 0, current: '', planned: '', after: '', hrsStarted: false, hrs: [], legacyRisk: null, gamma: .5, wealth: 10000, age: null, probs: [...AGE_BANDS[0].probs], beliefSource: 'example', priceMode: 'example', quoteYear: 2027, personalMonthly: [null, null, null, null, null, null], offered: [true, true, true, true, true, true], explore: noChanges(), checks: { oop1: null, oop2: null, prediction: '', predictedWith: '' }, tasks: { flipGamma: null, riskPremium: null }, reflections: { choice: '', uncertainty: '', omitted: '' } });
+  const defaultState = () => ({ version: 6, page: 0, current: '', planned: '', after: '', hrsStarted: false, hrs: [], legacyRisk: null, gamma: .5, wealth: 10000, age: null, probs: [...AGE_BANDS[0].probs], beliefSource: 'example', priceMode: 'example', quoteYear: 2027, personalMonthly: [null, null, null, null, null, null], offered: [true, true, true, true, true, true], explore: noChanges(), checks: { oop1: null, oop2: null, prediction: '', predictedWith: '', bills: [null, null, null, null], billsChecked: false }, tasks: { flipGamma: null, riskPremium: null }, reflections: { current: '', selfRisk: '', choice: '', uncertainty: '', omitted: '' } });
   let state = defaultState();
   let cached = null; // result with the student's answers
   let problem = null;
@@ -1137,7 +1136,7 @@ return Plotly;
     return r.complete ? r : null;
   }
   const initialGamma = () => riskResult()?.gamma ?? .5;
-  const revealed = () => state.checks.prediction !== '';
+  const revealed = () => true; // the result is shown directly (no prediction step since 2026-11-07)
   function rangeText(r) {
     return r.openUpper ? `${gammaText(r.low)} or higher` : r.low === 0 ? `below ${gammaText(r.high)}` : `between ${gammaText(r.low)} and ${gammaText(r.high)}`;
   }
@@ -1375,7 +1374,6 @@ return Plotly;
     $('why-corners').hidden = state.priceMode !== 'example';
     $('results-validation').hidden = !problem;
     $('results-validation').innerHTML = problem ? `${esc(problem.text)}${problem.page !== undefined ? ` <button class="text-button" data-go="${problem.page}">Go to ${PAGE_NAMES[problem.page]}</button>` : ''}` : '';
-    $('results-gate').hidden = !cached || revealed();
     $('results-body').hidden = !cached || !revealed();
     if (!cached) return;
     const r = cached.result;
@@ -1386,8 +1384,46 @@ return Plotly;
     const left = (quotesLookWrong() && r.excluded.length ? 'Your premium quotes look unusual. ' : '') + leftOutText(r.excluded, cached.wealth);
     $('wealth-sensitivity').textContent = cached.richer ? `With W = CHF 100,000 and the same answers, the model would recommend ${cached.richer.map(x => money(x.deductible)).join(' / ')}. Your result depends on W: with W = ${money(cached.wealth)}, the premiums leave little room for the worst case of a high deductible. Try other values on the What if page.` : '';
     $('wealth-sensitivity').hidden = !cached.richer; $('excluded-note').textContent = left; $('excluded-note').hidden = !left;
-    $('prediction-note').textContent = state.checks.prediction && state.checks.prediction !== 'none' ? `You predicted ${money(Number(state.checks.prediction))}.` : '';
     $('results-table').innerHTML = r.rows.map(x => `<tr class="${r.best.some(b => b.deductible === x.deductible) ? 'recommended' : ''}"><td>${money(x.deductible)}${Number(state.current) === x.deductible ? ' · current' : ''}</td><td>${money(x.premium)}</td><td>${money(x.expectedOOP)}</td><td>${money(x.expectedCost)}</td><td>${money(x.ce)}</td><td>${money(x.maximumOOP)}</td></tr>`).join('');
+    renderScenarios();
+  }
+
+  const BILLS = [0, 1000, 5000, 10000];
+  const scenarioRows = (rows, mark) => {
+    const totals = rows.map(x => BILLS.map(b => x.premium + M.outOfPocket(b, x.deductible)));
+    const lowest = BILLS.map((_, j) => Math.min(...totals.map(t => t[j])));
+    return rows.map((x, i) => `<tr${mark && Number(state.current) === x.deductible ? ' class="current"' : ''}><td>${money(x.deductible)}${mark && Number(state.current) === x.deductible ? ' · current' : ''}</td>${totals[i].map((t, j) => `<td>${Math.round(t) === Math.round(lowest[j]) ? `<strong>${money(t)}</strong>` : money(t)}</td>`).join('')}</tr>`).join('');
+  };
+
+  // The row the student works on: the current deductible if it is offered, otherwise the recommendation.
+  const practiceRow = r => r.rows.find(x => x.deductible === Number(state.current)) || r.best[0];
+  const billAnswer = (row, bill) => row.premium + M.outOfPocket(bill, row.deductible);
+  const billRight = (value, row, bill) => Number.isFinite(value) && Math.abs(value - billAnswer(row, bill)) <= 1;
+  function renderScenarios() {
+    const row = practiceRow(cached.result);
+    const own = row.deductible === Number(state.current);
+    $('scenario-intro').textContent = `Work it out for ${own ? 'your current deductible' : 'the recommended deductible'}, ${money(row.deductible)}, with a premium of ${money(row.premium)} a year: what would you pay in total for the year (premium plus out of pocket, in CHF) if your bills came to each of these amounts?${own ? '' : ' (You did not give a current deductible that is in the table.)'}`;
+    if (!$('scenario-inputs').children.length || $('scenario-inputs').dataset.deductible !== String(row.deductible)) {
+      if ($('scenario-inputs').dataset.deductible && $('scenario-inputs').dataset.deductible !== String(row.deductible)) { state.checks.bills = [null, null, null, null]; state.checks.billsChecked = false; $('scenario-feedback').textContent = ''; }
+      $('scenario-inputs').dataset.deductible = String(row.deductible);
+      $('scenario-inputs').innerHTML = BILLS.map((b, i) => `<label class="field narrow">Bills of ${money(b)}<input type="number" id="bill-${i}" data-bill="${i}" min="0" step="1" value="${state.checks.bills[i] ?? ''}"></label>`).join('');
+    }
+    $('scenario-full').hidden = !state.checks.billsChecked;
+    $('scenario-table').innerHTML = scenarioRows(cached.result.rows, true);
+  }
+  function checkScenarios() {
+    if (!cached) return;
+    const row = practiceRow(cached.result);
+    state.checks.bills = BILLS.map((_, i) => { const v = $('bill-' + i).value; return v === '' ? null : Number(v); });
+    if (state.checks.bills.some(v => !Number.isFinite(v))) { $('scenario-feedback').textContent = 'Fill in all four amounts first.'; persist(); return; }
+    const parts = BILLS.map((b, i) => {
+      const oop = M.outOfPocket(b, row.deductible);
+      return billRight(state.checks.bills[i], row, b) ? `${money(b)}: correct, ${money(row.premium)} + ${money(oop)} = ${money(row.premium + oop)}.` : `${money(b)}: not quite. ${b === 0 ? 'With no bills you pay only the premium.' : M.outOfPocket(b, row.deductible) - Math.min(b, row.deductible) >= 700 ? 'Remember the CHF 700 cap on the 10% part.' : 'Deductible first, then 10% of the rest.'}`;
+    });
+    state.checks.billsChecked = true;
+    $('scenario-feedback').innerHTML = `<ul>${parts.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
+    $('scenario-full').hidden = false;
+    persist();
   }
 
   const picks = r => r.best.map(x => money(x.deductible)).join(' / ');
@@ -1405,7 +1441,6 @@ return Plotly;
     $('cost-scale').value = e.scale;
     $('cost-scale-value').textContent = number(e.scale, 2) + '×';
     $('restore-initial').disabled = !changed();
-    $('whatif-gate').hidden = revealed();
     $('whatif-body').hidden = !revealed();
     $('whatif-pick').textContent = whatIf ? picks(whatIf.result) + (whatIf.result.excluded.length ? '. ' + leftOutText(whatIf.result.excluded, whatIf.wealth) : '') : (whatIfProblem || problem)?.text ?? '';
     if (!whatIf) { $('switch-list').innerHTML = ''; return; }
@@ -1415,6 +1450,8 @@ return Plotly;
   }
 
   function renderDecision() {
+    const rr = riskResult();
+    $('self-risk-gamma').textContent = rr ? `The risk questions put your γ ${rangeText(rr)}.` : 'You skipped the risk questions.';
     const pick = cached && revealed() ? picks(cached.result) : null;
     $('decision-summary').textContent = (pick ? `The model recommends ${pick}.` : 'See the result first.') + (state.current === NOT_INSURED ? ' You are not in Swiss basic insurance at the moment.' : state.current ? ` Your current deductible is ${money(Number(state.current))}.` : '');
     const ready = Boolean(cached) && revealed();
@@ -1555,7 +1592,7 @@ return Plotly;
     if (Array.isArray(raw.offered) && raw.offered.length === 6 && raw.offered.every(x => typeof x === 'boolean')) next.offered = [...raw.offered];
     const checks = raw.checks ?? {};
     const prediction = current && (checks.prediction === 'none' || (checks.prediction && M.DEDUCTIBLES.includes(Number(checks.prediction)))) ? String(checks.prediction) : '';
-    next.checks = { oop1: finiteIn(checks.oop1, 0, 1000000), oop2: finiteIn(checks.oop2, 0, 1000000), prediction, predictedWith: prediction && ['example', 'personal'].includes(checks.predictedWith) ? checks.predictedWith : '' };
+    next.checks = { oop1: finiteIn(checks.oop1, 0, 1000000), oop2: finiteIn(checks.oop2, 0, 1000000), prediction, predictedWith: prediction && ['example', 'personal'].includes(checks.predictedWith) ? checks.predictedWith : '', bills: Array.isArray(checks.bills) && checks.bills.length === 4 ? checks.bills.map(x => x === null ? null : finiteIn(x, 0, 1000000)) : [null, null, null, null], billsChecked: checks.billsChecked === true };
     const tasks = raw.tasks ?? {};
     next.tasks = { flipGamma: finiteIn(tasks.flipGamma, 0, 20), riskPremium: finiteIn(tasks.riskPremium, -1000000, 1000000) };
     const text = x => typeof x === 'string' ? x.slice(0, 15000) : '';
@@ -1572,11 +1609,10 @@ return Plotly;
 
   function syncUI() {
     if (document.activeElement !== $('age-input')) $('age-input').value = state.age ?? '';
-    $('current-deductible').value = state.current; $('planned-deductible').value = state.planned; $('after-deductible').value = state.after;
-    OOP_CHECKS.forEach(c => { $(c.id).value = state.checks[c.key] ?? ''; });
-    $('prediction').value = state.checks.prediction;
+    $('current-deductible').value = state.current;
     $('task-flip').value = state.tasks.flipGamma ?? ''; $('task-premium').value = state.tasks.riskPremium ?? '';
-    for (const id of ['oop-feedback', 'task-flip-feedback', 'task-premium-feedback', 'export-status', 'prediction-status']) $(id).textContent = '';
+    for (const id of ['task-flip-feedback', 'task-premium-feedback', 'export-status', 'scenario-feedback']) $(id).textContent = '';
+    $('scenario-inputs').innerHTML = ''; delete $('scenario-inputs').dataset.deductible;
     for (const key of Object.keys(state.reflections)) $('reflection-' + key).value = state.reflections[key];
     renderRisk(); renderCosts(); renderPrices(); navigate(state.page, false);
   }
@@ -1592,7 +1628,6 @@ return Plotly;
       const images = await Promise.all(figures.map(f => Plotly.toImage({ data: f.data, layout: { ...f.layout, width: 1000, height: 480 } }, { format: 'svg', width: 1000, height: 480 })));
       const img = (i, alt) => `<img src="${esc(images[i])}" alt="${alt}">`;
       const d = x => x ? money(Number(x)) : 'not stated';
-      const oopRight = OOP_CHECKS.filter(q => Number.isFinite(state.checks[q.key]) && Math.abs(state.checks[q.key] - M.outOfPocket(q.loss, q.deductible)) < .5).length;
       const warnings = state.priceMode === 'personal' ? M.quoteWarnings(state.personalMonthly, state.offered) : [];
       const rows = c.result.rows.map(x => `<tr><td>${money(x.deductible)}</td><td>${money(x.premium)}</td><td>${money(x.expectedOOP)}</td><td>${money(x.expectedCost)}</td><td>${money(x.ce)}</td><td>${money(x.maximumOOP)}</td></tr>`).join('');
       const sw = w.sw ? `The result changes at a ${number(w.sw.probability * 100, 1)}% chance of ${HIGH}.` : `The result does not change with the chance of ${HIGH}.`;
@@ -1601,13 +1636,12 @@ return Plotly;
       const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My deductible decision</title><style>body{font:16px/1.6 system-ui;color:#203a33;max-width:1000px;margin:35px auto;padding:25px}h1{font-size:36px;font-weight:500}h2{margin-top:34px;font-size:23px}img{width:100%}table{border-collapse:collapse;width:100%;font-size:13px}td,th{border-bottom:1px solid #d7dfd8;padding:9px;text-align:right}td:first-child,th:first-child{text-align:left}.reflection{white-space:pre-wrap}.small{font-size:13px;color:#64756e}button{padding:10px 18px;background:#195847;color:white;border:0;border-radius:6px}.wrap{overflow:auto}pre{white-space:pre-wrap}@media print{body{margin:0;padding:10px}button{display:none}img{break-inside:avoid}h2{break-after:avoid}}</style></head><body><button onclick="window.print()">Print / save as PDF</button>
 <h1>My deductible decision</h1><p class="small">Insurance Management · ${new Date().toISOString().slice(0, 10)}</p>
 <p><strong>Model recommendation with my answers:</strong> ${picks(c.result)}.${c.result.excluded.length ? ' ' + esc(leftOutText(c.result.excluded, c.wealth)) : ''}${c.richer ? ` With W = CHF 100,000 the model would recommend ${c.richer.map(x => money(x.deductible)).join(' / ')}.` : ''} <strong>Lowest expected cost:</strong> ${c.result.cheapest.map(x => money(x.deductible)).join(' / ')}.</p>
-<p>Age: ${state.age ?? 'not stated (examples for age 22)'}. Current deductible: ${state.current === NOT_INSURED ? 'not in Swiss basic insurance' : d(state.current)}. Planned before the exercise: ${d(state.planned)}. Chosen after the exercise: ${d(state.after)}.</p>
-<p>Prediction: ${state.checks.prediction === 'none' ? 'none' : d(state.checks.prediction)}. Hand calculations correct: ${oopRight} of 2.</p>
+<p>Age: ${state.age ?? 'not stated (examples for age 22)'}. Current deductible: ${state.current === NOT_INSURED ? 'not in Swiss basic insurance' : d(state.current)}.</p>
 <h2>Risk aversion</h2><p>${r ? `Risk answers: ${state.hrs.join(', ')}; γ ${rangeText(r)}; suggested value ${gammaText(r.gamma)}.` : 'Risk-attitude questions not answered; the model started at γ = 0.5.'} Used: γ = ${gammaText(c.gamma)}, W = ${money(c.wealth)}.</p>${img(0, 'Utility curve')}<p>${esc(figures[0].caption)}</p>
 ${state.legacyRisk ? `<details><summary>Answers from the earlier version</summary><pre>${esc(JSON.stringify(state.legacyRisk, null, 2))}</pre></details>` : ''}
 <h2>Healthcare costs</h2><p>Chances${state.beliefSource === 'example' ? ' (example values)' : ''}: ${RANGES.map((x, i) => `${x}: ${number(state.probs[i])}%`).join('; ')}.</p>${img(1, 'Cost chances')}
 <h2>Premiums</h2><p>${state.priceMode === 'example' ? `Example premiums: 2027, ${youngAdult() ? 'young adults (19 to 25)' : 'adults (26 and older)'}, a mid-priced insurer in the city of St. Gallen, standard model with accident cover.` : `My quotes for ${state.quoteYear}.`}${warnings.length ? ' Checks: ' + esc(warnings.join(' ')) : ''}</p>
-<h2>Result</h2>${img(2, 'Expected cost and CE cost')}<div class="wrap"><table><thead><tr><th>Deductible</th><th>Premium</th><th>Expected out-of-pocket</th><th>Expected total</th><th>CE cost</th><th>Maximum out-of-pocket</th></tr></thead><tbody>${rows}</tbody></table></div>${img(3, 'Most you could pay')}<p>Risk premium task: ${Number.isFinite(state.tasks.riskPremium) ? money(state.tasks.riskPremium, 2) : 'not answered'} (model: ${money(c.result.best[0].riskPremium, 2)}).</p>
+<h2>Result</h2>${img(2, 'Expected cost and CE cost')}<div class="wrap"><table><thead><tr><th>Deductible</th><th>Premium</th><th>Expected out-of-pocket</th><th>Expected total</th><th>CE cost</th><th>Maximum out-of-pocket</th></tr></thead><tbody>${rows}</tbody></table></div>${img(3, 'Most you could pay')}<h3>Total cost if my bills are…</h3><p>${(() => { const row = practiceRow(c.result); const b = state.checks.bills; return b.every(Number.isFinite) ? `My calculation for ${money(row.deductible)}: ${BILLS.map((x, i) => `${money(x)} → ${money(b[i])} ${billRight(b[i], row, x) ? '(correct)' : `(should be ${money(billAnswer(row, x))})`}`).join('; ')}.` : 'My calculation: not done.'; })()}</p><p class="small">Premium plus out of pocket for one year; lowest in each column in bold.</p><div class="wrap"><table><thead><tr><th>Deductible</th>${BILLS.map(b => `<th>${money(b)}</th>`).join('')}</tr></thead><tbody>${scenarioRows(c.result.rows, true)}</tbody></table></div><p>Risk premium task: ${Number.isFinite(state.tasks.riskPremium) ? money(state.tasks.riskPremium, 2) : 'not answered'} (model: ${money(c.result.best[0].riskPremium, 2)}).</p>
 <h2>What would change it</h2>${settings}${img(4, 'Recommendation map')}<p>${M.DEDUCTIBLES.map((f, i) => `<span style="color:${COLORS[i]}">■</span> ${money(f)}`).join(' &nbsp; ')}</p><p>W: ${esc(wealthSentence(w))} ${esc(sw)}</p><p>γ task: ${Number.isFinite(state.tasks.flipGamma) ? gammaText(state.tasks.flipGamma) : 'not answered'}.</p>
 ${Object.entries(REFLECTIONS).map(([key, label]) => `<h2>${label}</h2><p class="reflection">${esc(state.reflections[key] || 'No answer.')}</p>`).join('')}
 <h2>Model</h2><p class="small">Cost = premium + min(L, d) + min(10% × (L − d), CHF 700). The model picks the deductible with the highest expected CRRA utility of W minus this cost; CE cost = W − u⁻¹(expected utility). Risk questions: Barsky et al. (1997), Kimball et al. (2008). Standard adult cost-sharing only; care use is the same for every deductible.</p>
@@ -1619,10 +1653,9 @@ ${Object.entries(REFLECTIONS).map(([key, label]) => `<h2>${label}</h2><p class="
   }
 
   // ---------- Events ----------
-  for (const id of ['current-deductible', 'planned-deductible', 'after-deductible', 'prediction']) {
+  for (const id of ['current-deductible']) {
     for (const f of M.DEDUCTIBLES) { const option = document.createElement('option'); option.value = f; option.textContent = money(f); $(id).append(option); }
   }
-  const noPrediction = document.createElement('option'); noPrediction.value = 'none'; noPrediction.textContent = 'No prediction'; $('prediction').append(noPrediction);
   const notInsured = document.createElement('option'); notInsured.value = NOT_INSURED; notInsured.textContent = 'Not insured in Switzerland (home insurance / exempt)'; $('current-deductible').append(notInsured);
   document.addEventListener('click', event => { const b = event.target.closest('[data-go]'); if (b) navigate(Number(b.dataset.go)); });
   document.querySelectorAll('[data-step]').forEach(b => b.addEventListener('click', () => navigate(Number(b.dataset.step))));
@@ -1631,16 +1664,13 @@ ${Object.entries(REFLECTIONS).map(([key, label]) => `<h2>${label}</h2><p class="
     const v = e.target.value === '' ? null : Number(e.target.value);
     state.age = Number.isInteger(v) && v >= 19 && v <= 120 ? v : null;
     $('age-note').textContent = e.target.value !== '' && state.age === null ? 'Enter a whole number from 19.' : '';
-    // Example values follow the age; a prediction made with the old examples no longer counts.
+    // Example values follow the age.
     if (state.beliefSource === 'example') {
       state.probs = exampleProbs(); state.explore.high = null;
-      if (state.checks.predictedWith === 'example') { state.checks.prediction = ''; state.checks.predictedWith = ''; $('prediction').value = ''; }
     }
     renderCosts(); renderPrices(); refresh();
   });
   $('current-deductible').addEventListener('change', e => { state.current = e.target.value; refresh(); });
-  $('planned-deductible').addEventListener('change', e => { state.planned = e.target.value; });
-  $('after-deductible').addEventListener('change', e => { state.after = e.target.value; });
 
   function changeRisk(change) { change(); state.gamma = initialGamma(); renderRisk(); refresh(); }
   $('restart-risk').addEventListener('click', () => changeRisk(() => { state.hrsStarted = true; state.hrs = []; }));
@@ -1659,8 +1689,6 @@ ${Object.entries(REFLECTIONS).map(([key, label]) => `<h2>${label}</h2><p class="
     const t = event.target;
     if (t.dataset.prob === undefined) return;
     state.probs[Number(t.dataset.prob)] = t.value === '' ? NaN : Number(t.value);
-    // A prediction made with the example values does not count for the student's own values.
-    if (state.beliefSource === 'example' && state.checks.predictedWith === 'example') { state.checks.prediction = ''; state.checks.predictedWith = ''; $('prediction').value = ''; }
     state.beliefSource = 'personal'; state.explore.high = null;
     renderCostTotal(); refresh();
   });
@@ -1675,27 +1703,14 @@ ${Object.entries(REFLECTIONS).map(([key, label]) => `<h2>${label}</h2><p class="
   $('premium-inputs').addEventListener('input', event => { const i = event.target.dataset.premium; if (i === undefined) return; state.personalMonthly[Number(i)] = event.target.value === '' ? null : Number(event.target.value); renderPriceWarnings(); refresh(); });
   $('premium-inputs').addEventListener('change', event => { const i = event.target.dataset.offered; if (i === undefined) return; state.offered[Number(i)] = event.target.checked; renderPrices(); refresh(); });
 
-  $('check-oop').addEventListener('click', () => {
-    $('oop-feedback').textContent = OOP_CHECKS.map(q => {
-      const value = $(q.id).value === '' ? NaN : Number($(q.id).value);
-      state.checks[q.key] = Number.isFinite(value) ? value : null;
-      if (!Number.isFinite(value)) return `${q.label}: no answer.`;
-      return Math.abs(value - M.outOfPocket(q.loss, q.deductible)) < .5 ? `${q.label}: correct (${q.right}).` : `${q.label}: not quite. ${q.hint}`;
-    }).join(' ');
-    persist();
-  });
-  $('reveal-results').addEventListener('click', () => {
-    const p = $('prediction').value;
-    if (!p) { $('prediction-status').textContent = 'Choose an option first.'; return; }
-    $('prediction-status').textContent = '';
-    state.checks.prediction = p; state.checks.predictedWith = state.beliefSource; refresh();
-  });
   document.querySelectorAll('[data-cost-view]').forEach(b => b.addEventListener('click', () => {
     costView = b.dataset.costView;
     document.querySelectorAll('[data-cost-view]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
     drawVisible();
   }));
   document.querySelectorAll('[data-task]').forEach(b => b.addEventListener('click', () => checkTask(b.dataset.task)));
+  $('check-scenarios').addEventListener('click', checkScenarios);
+  $('scenario-inputs').addEventListener('input', e => { const i = e.target.dataset.bill; if (i === undefined) return; state.checks.bills[Number(i)] = e.target.value === '' ? null : Number(e.target.value); persist(); });
   $('high-prob').addEventListener('input', e => { state.explore.high = Number(e.target.value) / 100; refresh(); });
   $('cost-scale').addEventListener('input', e => { state.explore.scale = Number(e.target.value); refresh(); });
   $('restore-initial').addEventListener('click', () => { state.explore = noChanges(); refresh(); });
