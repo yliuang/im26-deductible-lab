@@ -1243,7 +1243,7 @@ return Plotly;
     const stake = Math.min(2000, W / 2); const low = W - stake; const high = W + stake; const eu = (u(low) + u(high)) / 2; const q = 1 - g;
     const ce = W * (Math.abs(q) < 1e-10 ? Math.exp(eu) : Math.exp(Math.log1p(q * eu) / q));
     const xs = Array.from({ length: 121 }, (_, i) => W - 1.5 * stake + 3 * stake * i / 120);
-    const caption = g === 0 ? `With γ = 0, a 50–50 chance of ${money(low)} or ${money(high)} is worth exactly its expected value, ${money(W)}.` : `With γ = ${gammaText(g)}, a 50–50 chance of ${money(low)} or ${money(high)} is worth as much as ${money(ce)} for sure. Its expected value is ${money(W)}; the gap of ${money(W - ce)} is the risk premium.`;
+    const caption = g === 0 ? `With γ = 0, a 50–50 chance of ${money(low)} or ${money(high)} is worth exactly its expected value, ${money(W)}.` : `With γ = ${gammaText(g)}, a 50–50 chance of ${money(low)} or ${money(high)} is worth as much as ${money(ce)} for sure. Its expected value is ${money(W)}; the gap of ${money(W - ce)} is the risk premium. With more money to draw on, the same gamble of ± ${money(stake)} is a smaller share of W, so the curve looks flatter and the risk premium is smaller.`;
     return {
       caption,
       data: [
